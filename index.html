@@ -194,6 +194,14 @@
 
 
 
+
+  .pac-container{z-index:9999!important;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);font-family:'Inter',sans-serif;margin-top:2px;}
+  .pac-item{padding:0.5rem 0.85rem;font-size:0.85rem;cursor:pointer;border-top:1px solid var(--border);}
+  .pac-item:first-child{border-top:none;}
+  .pac-item:hover{background:var(--bg);}
+  .pac-item-query{font-weight:600;color:var(--text);}
+  .pac-matched{color:var(--blue);}
+
   .map-loc-btn{
     position:absolute;bottom:12px;left:12px;z-index:10;
     background:rgba(255,255,255,0.95);backdrop-filter:blur(6px);
@@ -379,18 +387,24 @@
           Usa la mia posizione attuale
         </button>
       </div>
-      <div class="frow">
-        <div class="fl"><label>Tipo</label>
+      <div class="fl"><label>Tipo</label>
           <select class="finput" id="f-tipo">
             <option>Bagno pubblico</option><option>Bar / Caffè</option><option>Ristorante</option>
             <option>Centro commerciale</option><option>Stazione</option><option>Altro</option>
           </select>
-        </div>
-        <div class="fl"><label>Indirizzo</label><input class="finput" id="f-indirizzo" type="text" placeholder="Via Roma 1"></div>
       </div>
       <div class="fl">
-        <label>Città <span style="color:var(--red);font-size:0.8rem;">* obbligatoria</span></label>
-        <input class="finput" id="f-citta" type="text" placeholder="Es. Milano, Roma, Napoli...">
+        <label>Indirizzo <span style="color:var(--red);font-size:0.8rem;">* cerca e seleziona dal menu</span></label>
+        <input class="finput" id="f-indirizzo" type="text" placeholder="Es. Villa Borghese, Roma..." autocomplete="off">
+        <input type="hidden" id="f-citta">
+        <input type="hidden" id="f-lat">
+        <input type="hidden" id="f-lng">
+        <div id="addr-hint" style="font-size:0.72rem;color:var(--text3);margin-top:0.3rem;display:none;">
+          Seleziona un suggerimento dalla lista per salvare le coordinate esatte
+        </div>
+        <div id="addr-ok" style="font-size:0.72rem;color:var(--green);margin-top:0.3rem;display:none;">
+          ✓ Posizione trovata correttamente
+        </div>
       </div>
       <div class="fl"><label>Costo</label>
         <div class="tog-g">
@@ -536,8 +550,10 @@ function showToast(msg, success=true) {
 async function doSubmit() {
   const nome = document.getElementById('f-nome').value.trim();
   const citta = document.getElementById('f-citta').value.trim();
+  const lat = document.getElementById('f-lat').value;
+  const lng = document.getElementById('f-lng').value;
   if (!nome) { showToast('Inserisci il nome del luogo'); return; }
-  if (!citta) { showToast('La città è obbligatoria!'); return; }
+  if (!lat || !lng) { showToast('Cerca e seleziona l\'indirizzo dalla lista'); return; }
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true;
@@ -549,6 +565,8 @@ async function doSubmit() {
     tipo: document.getElementById('f-tipo').value,
     indirizzo: document.getElementById('f-indirizzo').value,
     citta: citta,
+    lat: lat,
+    lng: lng,
     gratuito: document.getElementById('tog-gratis').classList.contains('on'),
     accessibile: document.getElementById('svc-accessibile').classList.contains('on'),
     fasciatoio: document.getElementById('svc-fasciatoio').classList.contains('on'),
@@ -558,21 +576,6 @@ async function doSubmit() {
     voto: ratingSelezionato,
     aggiunto_da: 'utente',
   });
-
-  // Try to geocode address to get lat/lng
-  try {
-    const addr = document.getElementById('f-indirizzo').value + ' ' + citta;
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: addr }, (results, status) => {
-      if (status === 'OK') {
-        params.set('lat', results[0].geometry.location.lat());
-        params.set('lng', results[0].geometry.location.lng());
-      }
-    });
-  } catch(e) {}
-  
-  // Wait a moment for geocoding then submit
-  await new Promise(r => setTimeout(r, 800));
 
   try {
     await fetch(`${API}?${params.toString()}`);
@@ -636,8 +639,13 @@ async function usaGeolocalizzazione() {
       const addr = data.address;
       const via = (addr.road || '') + (addr.house_number ? ' ' + addr.house_number : '');
       const citta = addr.city || addr.town || addr.village || addr.municipality || '';
-      if (via) document.getElementById('f-indirizzo').value = via;
+      const fullAddr = [via, citta].filter(Boolean).join(', ');
+      if (fullAddr) document.getElementById('f-indirizzo').value = fullAddr;
       if (citta) document.getElementById('f-citta').value = citta;
+      document.getElementById('f-lat').value = lat;
+      document.getElementById('f-lng').value = lng;
+      document.getElementById('addr-ok').style.display = 'block';
+      document.getElementById('addr-hint').style.display = 'none';
       btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--green);fill:none;stroke-width:2.5;"><polyline points="20 6 9 17 4 12"/></svg> Posizione rilevata!';
       btn.style.background = 'var(--green-light)';
       btn.style.borderColor = 'var(--green)';
@@ -787,6 +795,65 @@ function initMap() {
 
   // Load markers after map init
   caricaBagni();
+
+  // Init Places Autocomplete on address field
+  initAutocomplete();
+}
+
+function initAutocomplete() {
+  const input = document.getElementById('f-indirizzo');
+  if (!input || !google.maps.places) return;
+
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ['establishment', 'geocode'],
+    componentRestrictions: { country: 'it' },
+    fields: ['geometry', 'formatted_address', 'address_components', 'name']
+  });
+
+  input.addEventListener('input', () => {
+    // Reset coords when user types manually
+    document.getElementById('f-lat').value = '';
+    document.getElementById('f-lng').value = '';
+    document.getElementById('f-citta').value = '';
+    document.getElementById('addr-ok').style.display = 'none';
+    document.getElementById('addr-hint').style.display = 'block';
+  });
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry) return;
+
+    // Extract lat/lng
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    document.getElementById('f-lat').value = lat;
+    document.getElementById('f-lng').value = lng;
+
+    // Extract city from address components
+    let citta = '';
+    if (place.address_components) {
+      for (const comp of place.address_components) {
+        if (comp.types.includes('locality') || comp.types.includes('administrative_area_level_3')) {
+          citta = comp.long_name;
+          break;
+        }
+      }
+    }
+    document.getElementById('f-citta').value = citta;
+
+    // Update address field with formatted address
+    input.value = place.formatted_address || place.name || input.value;
+
+    // Show confirmation
+    document.getElementById('addr-hint').style.display = 'none';
+    document.getElementById('addr-ok').style.display = 'block';
+
+    // Center map on selected place
+    if (map) {
+      map.setCenter({ lat, lng });
+      map.setZoom(17);
+    }
+  });
 }
 
 function aggiornaMappaMarkers(bagni) {
@@ -826,6 +893,9 @@ let visitTimer = null;
 let watchId = null;
 let bagnoInVisita = null;
 
+const VISIT_KEY = 'peemap_visita';
+const VISIT_DURATION = 2 * 60 * 1000; // 2 minuti
+
 function avviaMonitoraggioVisita(bagno) {
   bagnoInVisita = bagno;
   if (!navigator.geolocation || !bagno.lat || !bagno.lng) return;
@@ -835,15 +905,53 @@ function avviaMonitoraggioVisita(bagno) {
     const dist = calcolaDistanza(pos.coords.latitude, pos.coords.longitude, parseFloat(bagno.lat), parseFloat(bagno.lng));
     if (dist < 50) {
       if (!visitTimer) {
+        // Salva ora di inizio visita in localStorage
+        const visitaInCorso = JSON.parse(localStorage.getItem(VISIT_KEY) || 'null');
+        if (!visitaInCorso) {
+          localStorage.setItem(VISIT_KEY, JSON.stringify({
+            bagno: bagno,
+            iniziata: Date.now()
+          }));
+        }
         visitTimer = setTimeout(() => {
           mostraRevPopup(bagno);
-        }, 2 * 60 * 1000); // 2 minuti
+          localStorage.removeItem(VISIT_KEY);
+        }, VISIT_DURATION);
       }
     } else {
       if (visitTimer) { clearTimeout(visitTimer); visitTimer = null; }
+      localStorage.removeItem(VISIT_KEY);
     }
   }, null, { enableHighAccuracy: true, maximumAge: 10000 });
 }
+
+// Controlla al risveglio del telefono se c'era una visita in corso
+function controllaVisitaInterrotta() {
+  const visitaInCorso = JSON.parse(localStorage.getItem(VISIT_KEY) || 'null');
+  if (!visitaInCorso) return;
+
+  const trascorso = Date.now() - visitaInCorso.iniziata;
+
+  if (trascorso >= VISIT_DURATION) {
+    // Era abbastanza tempo — mostra popup recensione
+    localStorage.removeItem(VISIT_KEY);
+    setTimeout(() => mostraRevPopup(visitaInCorso.bagno), 1500);
+  } else {
+    // Non ancora — riprendi il timer dal tempo rimasto
+    const rimanente = VISIT_DURATION - trascorso;
+    visitTimer = setTimeout(() => {
+      mostraRevPopup(visitaInCorso.bagno);
+      localStorage.removeItem(VISIT_KEY);
+    }, rimanente);
+  }
+}
+
+// Ascolta quando il telefono si risveglia (visibilitychange)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    controllaVisitaInterrotta();
+  }
+});
 
 function calcolaDistanza(lat1, lng1, lat2, lng2) {
   const R = 6371000;
