@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PeeMap</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --white:#ffffff;--bg:#f7f8fa;--bg2:#f0f2f5;--border:#e4e7eb;--border2:#d1d5db;
+    --text:#111827;--text2:#6b7280;--text3:#9ca3af;
+    --blue:#2563eb;--blue-light:#eff6ff;--blue-mid:#dbeafe;
+    --green:#16a34a;--green-light:#f0fdf4;
+    --red:#dc2626;--red-light:#fef2f2;
+    --amber:#d97706;--amber-light:#fffbeb;
+    --shadow-xs:0 1px 2px rgba(0,0,0,0.05);
+    --shadow-sm:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+    --shadow:0 4px 12px rgba(0,0,0,0.07),0 1px 3px rgba(0,0,0,0.04);
+    --r:12px;--r-sm:8px;--r-xs:6px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Inter',sans-serif;background:var(--white);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+  #splash{position:fixed;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity 0.45s ease;}
+  #splash.hide{opacity:0;pointer-events:none;}
+  .sp-icon{width:72px;height:72px;border-radius:20px;background:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:1.1rem;box-shadow:0 8px 20px rgba(37,99,235,0.28);animation:scaleIn 0.5s cubic-bezier(.34,1.56,.64,1) both;}
+  .sp-icon svg{width:36px;height:36px;fill:#fff;}
+  .sp-name{font-size:1.9rem;font-weight:800;letter-spacing:-1px;color:var(--text);animation:fadeUp 0.4s ease 0.2s both;}
+  .sp-name span{color:var(--blue);}
+  .sp-tag{font-size:0.82rem;color:var(--text2);margin-top:0.3rem;font-weight:400;animation:fadeUp 0.4s ease 0.35s both;}
+  .sp-bar{margin-top:2.5rem;width:80px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;animation:fadeUp 0.3s ease 0.5s both;}
+  .sp-fill{height:100%;width:0;background:var(--blue);animation:fillBar 1.3s ease 0.6s forwards;}
+  @keyframes fillBar{to{width:100%;}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.4);}to{opacity:1;transform:scale(1);}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  #app{max-width:430px;margin:0 auto;min-height:100vh;position:relative;}
+
+  .hdr{background:#fff;padding:0.85rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .hdr-logo{display:flex;align-items:center;gap:0.45rem;}
+  .hdr-icon{width:30px;height:30px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;}
+  .hdr-icon svg{width:16px;height:16px;fill:#fff;}
+  .hdr-name{font-size:1.15rem;font-weight:800;letter-spacing:-0.5px;}
+  .hdr-name span{color:var(--blue);}
+  .hdr-acts{display:flex;gap:0.4rem;}
+  .hbtn{width:34px;height:34px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .hbtn svg{width:16px;height:16px;stroke:var(--text2);fill:none;stroke-width:1.8;}
+
+  .srch-wrap{background:#fff;padding:0.65rem 1rem 0.8rem;border-bottom:1px solid var(--border);}
+  .srch{display:flex;align-items:center;gap:0.5rem;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:0.6rem 0.85rem;transition:border-color 0.2s,box-shadow 0.2s;}
+  .srch:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);background:#fff;}
+  .srch svg{width:15px;height:15px;stroke:var(--text3);flex-shrink:0;fill:none;stroke-width:2;}
+  .srch input{flex:1;border:none;background:none;outline:none;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);}
+  .srch input::placeholder{color:var(--text3);}
+
+  .map-area{height:215px;position:relative;background:#e8eff8;overflow:hidden;border-bottom:1px solid var(--border);}
+  .map-base{width:100%;height:100%;background:#e8eff5;position:relative;}
+  .rd{position:absolute;background:#fff;border-radius:1px;}
+  .rd.h{height:9px;left:0;right:0;}
+  .rd.v{width:9px;top:0;bottom:0;}
+  .rd.h2{height:5px;left:0;right:0;}
+  .rd.v2{width:5px;top:0;bottom:0;}
+  .blk{position:absolute;background:#d8e4f0;border-radius:3px;}
+  .grn{position:absolute;background:#c8dfc8;border-radius:4px;}
+
+  .mpin{position:absolute;cursor:pointer;display:flex;flex-direction:column;align-items:center;animation:pinIn 0.4s cubic-bezier(.34,1.56,.64,1) both;z-index:10;}
+  @keyframes pinIn{from{opacity:0;transform:translateY(-10px) scale(0.5);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .mpin-body{width:30px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.2);}
+  .mpin-body.g{background:var(--green);}
+  .mpin-body.r{background:var(--red);}
+  .mpin-body.a{background:var(--amber);}
+  .mpin-body svg{transform:rotate(45deg);width:14px;height:14px;fill:#fff;}
+
+  .udot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;}
+  .udot-ring{position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);top:50%;left:50%;transform:translate(-50%,-50%);animation:uRing 2s ease-in-out infinite;}
+  .udot-core{width:12px;height:12px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.2);position:relative;z-index:1;}
+  @keyframes uRing{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.8;}50%{transform:translate(-50%,-50%) scale(1.8);opacity:0;}}
+
+  .map-badge{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.95);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:7px;padding:0.3rem 0.65rem;font-size:0.7rem;font-weight:600;color:var(--blue);display:flex;align-items:center;gap:0.3rem;box-shadow:var(--shadow-xs);}
+  .map-ctrls{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:4px;}
+  .mctrl{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,0.95);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:var(--text2);font-weight:600;}
+
+  .filters{background:#fff;padding:0.6rem 1rem;display:flex;gap:0.4rem;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);}
+  .filters::-webkit-scrollbar{display:none;}
+  .pill{padding:0.35rem 0.85rem;border-radius:50px;background:var(--bg);border:1.5px solid var(--border);font-size:0.75rem;font-weight:500;color:var(--text2);white-space:nowrap;cursor:pointer;transition:all 0.15s;font-family:'Inter',sans-serif;}
+  .pill.on{background:var(--blue);border-color:var(--blue);color:#fff;}
+
+  .list-head{padding:0.85rem 1rem 0.4rem;display:flex;align-items:center;justify-content:space-between;background:#fff;}
+  .list-title{font-size:0.875rem;font-weight:700;}
+  .list-link{font-size:0.75rem;color:var(--blue);font-weight:500;cursor:pointer;}
+  .list{padding:0 0 6rem;background:var(--bg);}
+
+  .item{background:#fff;border-bottom:1px solid var(--border);padding:0.9rem 1rem;display:flex;align-items:center;gap:0.85rem;cursor:pointer;transition:background 0.12s;}
+  .item:first-child{border-top:1px solid var(--border);}
+  .item:active{background:var(--bg);}
+  .item-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .item-icon svg{width:20px;height:20px;}
+  .item-icon.g{background:var(--green-light);}
+  .item-icon.g svg{fill:var(--green);}
+  .item-icon.r{background:var(--red-light);}
+  .item-icon.r svg{fill:var(--red);}
+  .item-icon.a{background:var(--amber-light);}
+  .item-icon.a svg{fill:var(--amber);}
+  .item-body{flex:1;min-width:0;}
+  .item-name{font-size:0.875rem;font-weight:600;margin-bottom:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .item-sub{font-size:0.75rem;color:var(--text2);margin-bottom:0.35rem;}
+  .item-tags{display:flex;gap:0.3rem;flex-wrap:wrap;}
+  .itag{font-size:0.68rem;font-weight:500;padding:0.15rem 0.45rem;border-radius:4px;}
+  .itag.g{background:var(--green-light);color:var(--green);}
+  .itag.a{background:var(--amber-light);color:var(--amber);}
+  .itag.r{background:var(--red-light);color:var(--red);}
+  .itag.n{background:var(--bg2);color:var(--text2);}
+  .item-right{display:flex;flex-direction:column;align-items:flex-end;gap:0.3rem;flex-shrink:0;}
+  .item-rating{font-size:0.78rem;font-weight:700;display:flex;align-items:center;gap:0.2rem;}
+  .item-rating svg{width:11px;height:11px;fill:var(--amber);}
+  .item-dist{font-size:0.72rem;color:var(--text3);}
+  .item-chevron svg{width:14px;height:14px;stroke:var(--text3);fill:none;stroke-width:2;}
+
+  /* Stato caricamento */
+  .loading{padding:2rem;text-align:center;color:var(--text2);font-size:0.85rem;}
+  .loading-spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 0.75rem;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .empty{padding:2rem;text-align:center;color:var(--text2);font-size:0.85rem;}
+  .empty svg{width:40px;height:40px;stroke:var(--border2);fill:none;stroke-width:1.5;margin:0 auto 0.75rem;display:block;}
+
+  .fab{position:fixed;bottom:5.2rem;right:1rem;width:50px;height:50px;border-radius:14px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(37,99,235,0.32);cursor:pointer;z-index:200;transition:transform 0.15s;animation:fabIn 0.4s cubic-bezier(.34,1.56,.64,1) 1.2s both;}
+  .fab:active{transform:scale(0.9);}
+  .fab svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.5;}
+  @keyframes fabIn{from{opacity:0;transform:scale(0);}to{opacity:1;transform:scale(1);}}
+
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid var(--border);padding:0.55rem 0 calc(0.55rem + env(safe-area-inset-bottom));display:flex;z-index:100;}
+  .nitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.18rem;cursor:pointer;padding:0.25rem 0;}
+  .nitem svg{width:20px;height:20px;stroke:var(--text3);fill:none;stroke-width:1.8;transition:stroke 0.15s;}
+  .nitem span{font-size:0.6rem;color:var(--text3);font-weight:500;transition:color 0.15s;}
+  .nitem.on svg{stroke:var(--blue);}
+  .nitem.on span{color:var(--blue);}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(3px);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+  .overlay.show{opacity:1;pointer-events:all;}
+  .sheet{width:100%;max-width:430px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;border-top:1px solid var(--border);transform:translateY(100%);transition:transform 0.35s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;}
+  .overlay.show .sheet{transform:translateY(0);}
+  .sh-handle{width:32px;height:3px;background:var(--border2);border-radius:2px;margin:0.9rem auto 0;}
+
+  .det-photo{width:100%;height:160px;background:var(--bg2);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);position:relative;}
+  .det-photo svg{width:48px;height:48px;fill:var(--border2);}
+  .det-body{padding:1rem;}
+  .det-name{font-size:1.05rem;font-weight:800;margin-bottom:0.15rem;}
+  .det-sub{font-size:0.8rem;color:var(--text2);margin-bottom:1rem;}
+  .det-row{display:flex;gap:0.5rem;margin-bottom:1rem;}
+  .det-stat{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:0.65rem 0.5rem;text-align:center;}
+  .det-stat-val{font-size:1.05rem;font-weight:800;color:var(--blue);}
+  .det-stat-lbl{font-size:0.65rem;color:var(--text2);margin-top:0.1rem;font-weight:500;}
+  .trust{background:var(--green-light);border:1px solid #bbf7d0;border-radius:var(--r-sm);padding:0.7rem 0.85rem;display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;}
+  .trust-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .trust-icon svg{width:16px;height:16px;fill:#fff;}
+  .trust-title{font-size:0.8rem;font-weight:700;color:var(--green);}
+  .trust-sub{font-size:0.7rem;color:#16a34a99;margin-top:0.1rem;}
+  .det-services{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;}
+  .svc{display:flex;align-items:center;gap:0.35rem;font-size:0.75rem;font-weight:500;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xs);padding:0.35rem 0.65rem;}
+  .svc svg{width:13px;height:13px;stroke:var(--text2);fill:none;stroke-width:2;}
+  .divider{height:1px;background:var(--border);margin:0.85rem 0;}
+  .rev-hd{font-size:0.82rem;font-weight:700;margin-bottom:0.6rem;}
+  .rev{padding:0.75rem 0;border-bottom:1px solid var(--border);}
+  .rev:last-child{border-bottom:none;}
+  .rev-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;}
+  .rev-user{font-size:0.78rem;font-weight:600;}
+  .rev-meta{font-size:0.68rem;color:var(--text3);}
+  .rev-stars{display:flex;gap:1px;margin-bottom:0.3rem;}
+  .rev-stars svg{width:10px;height:10px;}
+  .rev-stars svg.on{fill:var(--amber);}
+  .rev-stars svg.off{fill:var(--border2);}
+  .rev-text{font-size:0.8rem;color:var(--text2);line-height:1.55;}
+  .det-ctas{display:flex;gap:0.6rem;padding:0.5rem 0 0.25rem;}
+  .btn-nav{flex:1;padding:0.85rem;border-radius:var(--r-sm);background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:0.4rem;box-shadow:0 4px 12px rgba(37,99,235,0.25);}
+  .btn-nav svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2;}
+  .btn-share{width:44px;padding:0.85rem;border-radius:var(--r-sm);background:var(--bg);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .btn-share svg{width:16px;height:16px;stroke:var(--text2);fill:none;stroke-width:2;}
+
+  .add-body{padding:1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));}
+  .add-title{font-size:1rem;font-weight:800;margin-bottom:1.1rem;}
+  .fl{margin-bottom:0.85rem;}
+  .fl label{display:block;font-size:0.72rem;font-weight:600;color:var(--text2);margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:0.3px;}
+  .finput{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:0.65rem 0.85rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.875rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
+  .finput:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);background:#fff;}
+  .frow{display:flex;gap:0.6rem;}
+  .frow .fl{flex:1;}
+  .tog-g{display:flex;gap:0.4rem;}
+  .tog{flex:1;padding:0.6rem 0.5rem;border-radius:var(--r-sm);background:var(--bg);border:1.5px solid var(--border);color:var(--text2);font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.3rem;transition:all 0.15s;}
+  .tog.on{background:var(--blue-light);border-color:var(--blue);color:var(--blue);}
+  .rstars{display:flex;gap:0.4rem;}
+  .rstar{cursor:pointer;}
+  .rstar svg{width:26px;height:26px;fill:var(--border2);transition:fill 0.1s;}
+  .rstar.on svg{fill:var(--amber);}
+  .photo-upload{width:100%;height:80px;background:var(--bg);border:1.5px dashed var(--border2);border-radius:var(--r-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.3rem;cursor:pointer;}
+  .photo-upload svg{width:20px;height:20px;stroke:var(--text3);fill:none;stroke-width:1.5;}
+  .photo-upload span{font-size:0.75rem;color:var(--text3);font-weight:500;}
+  .sbtn{width:100%;padding:0.9rem;border-radius:var(--r-sm);background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;border:none;margin-top:0.75rem;box-shadow:0 4px 12px rgba(37,99,235,0.25);transition:transform 0.15s;}
+  .sbtn:active{transform:scale(0.97);}
+  .sbtn:disabled{opacity:0.6;cursor:not-allowed;}
+
+  .toast{position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--text);color:#fff;padding:0.65rem 1.2rem;border-radius:50px;font-size:0.8rem;font-weight:600;z-index:9000;white-space:nowrap;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow);display:flex;align-items:center;gap:0.4rem;}
+  .toast svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="sp-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
+  <div class="sp-name">Pee<span>Map</span></div>
+  <div class="sp-tag">Trova il bagno giusto, ovunque tu sia</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg">Bagno aggiunto con successo!</span>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-logo">
+      <div class="hdr-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
+      <div class="hdr-name">Pee<span>Map</span></div>
+    </div>
+    <div class="hdr-acts">
+      <div class="hbtn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg></div>
+      <div class="hbtn"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    </div>
+  </div>
+
+  <div class="srch-wrap">
+    <div class="srch">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Cerca per luogo o indirizzo..." oninput="filtraBagni()">
+    </div>
+  </div>
+
+  <div class="map-area">
+    <div class="map-base">
+      <div class="blk" style="top:5%;left:5%;width:18%;height:22%;"></div>
+      <div class="blk" style="top:5%;left:38%;width:22%;height:18%;"></div>
+      <div class="blk" style="top:5%;right:5%;width:20%;height:25%;"></div>
+      <div class="blk" style="top:38%;left:5%;width:15%;height:20%;"></div>
+      <div class="blk" style="top:45%;right:5%;width:18%;height:18%;"></div>
+      <div class="blk" style="bottom:8%;left:35%;width:25%;height:20%;"></div>
+      <div class="grn" style="top:60%;left:8%;width:22%;height:28%;opacity:0.7;"></div>
+      <div class="rd h" style="top:32%;"></div>
+      <div class="rd h2" style="top:57%;opacity:0.6;"></div>
+      <div class="rd v" style="left:30%;"></div>
+      <div class="rd v2" style="left:65%;opacity:0.6;"></div>
+      <div class="udot"><div class="udot-ring"></div><div class="udot-core"></div></div>
+      <div id="mapPins"></div>
+      <div class="map-badge">Posizione attuale</div>
+      <div class="map-ctrls"><div class="mctrl">+</div><div class="mctrl">−</div></div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="pill on" onclick="setFiltro('tutti',this)">Tutti</div>
+    <div class="pill" onclick="setFiltro('puliti',this)">Puliti</div>
+    <div class="pill" onclick="setFiltro('gratuiti',this)">Gratuiti</div>
+    <div class="pill" onclick="setFiltro('accessibili',this)">Accessibili</div>
+  </div>
+
+  <div class="list-head">
+    <span class="list-title">Bagni vicino a te</span>
+    <span class="list-link" id="countLabel"></span>
+  </div>
+
+  <div class="list" id="lista">
+    <div class="loading"><div class="loading-spinner"></div>Caricamento bagni...</div>
+  </div>
+</div>
+
+<div class="fab" onclick="openAdd()">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</div>
+
+<div class="bnav">
+  <div class="nitem on"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg><span>Mappa</span></div>
+  <div class="nitem" onclick="setNav(this)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Cerca</span></div>
+  <div class="nitem" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span>Salvati</span></div>
+  <div class="nitem" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profilo</span></div>
+</div>
+
+<!-- DETAIL -->
+<div class="overlay" id="detOv" onclick="closeOv(event,'detOv')">
+  <div class="sheet" id="detSheet"></div>
+</div>
+
+<!-- ADD -->
+<div class="overlay" id="addOv" onclick="closeOv(event,'addOv')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="add-body">
+      <div class="add-title">Aggiungi un bagno</div>
+      <div class="fl"><label>Nome del luogo</label><input class="finput" id="f-nome" type="text" placeholder="Es. Bar Centrale"></div>
+      <div class="frow">
+        <div class="fl"><label>Tipo</label>
+          <select class="finput" id="f-tipo">
+            <option>Bagno pubblico</option><option>Bar / Caffè</option><option>Ristorante</option>
+            <option>Centro commerciale</option><option>Stazione</option><option>Altro</option>
+          </select>
+        </div>
+        <div class="fl"><label>Indirizzo</label><input class="finput" id="f-indirizzo" type="text" placeholder="Via Roma 1"></div>
+      </div>
+      <div class="fl"><label>Costo</label>
+        <div class="tog-g">
+          <button class="tog on" id="tog-gratis" onclick="togExcl(this)">Gratuito</button>
+          <button class="tog" onclick="togExcl(this)">A pagamento</button>
+        </div>
+      </div>
+      <div class="fl"><label>Valutazione pulizia</label>
+        <div class="rstars" id="rstars">
+          <div class="rstar" onclick="setR(1)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="rstar" onclick="setR(2)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="rstar" onclick="setR(3)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="rstar" onclick="setR(4)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          <div class="rstar" onclick="setR(5)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        </div>
+      </div>
+      <div class="fl"><label>Servizi</label>
+        <div class="tog-g" style="flex-wrap:wrap;gap:0.4rem;">
+          <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-accessibile" onclick="this.classList.toggle('on')">Accessibile</button>
+          <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-fasciatoio" onclick="this.classList.toggle('on')">Fasciatoio</button>
+          <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-sapone" onclick="this.classList.toggle('on')">Sapone</button>
+          <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-asciugamani" onclick="this.classList.toggle('on')">Asciugamani</button>
+        </div>
+      </div>
+      <div class="fl"><label>Orario (opzionale)</label><input class="finput" id="f-orario" type="text" placeholder="Es. 8:00–20:00"></div>
+      <div class="fl"><label>Recensione</label><textarea class="finput" id="f-recensione" rows="3" placeholder="Descrivi la tua esperienza..." style="resize:none;"></textarea></div>
+      <button class="sbtn" id="submitBtn" onclick="doSubmit()">Aggiungi a PeeMap</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbz6Iu4ghyV2SEdk9VOBH1OXurVI0XJt-fu_x9Vb8GjvUrQJbFmB5Rs4iJXW2vZkj1UD/exec';
+
+let tuttiBagni = [];
+let filtroAttivo = 'tutti';
+let ratingSelezionato = 0;
+
+// Splash
+setTimeout(()=>document.getElementById('splash').classList.add('hide'), 1900);
+
+// Carica bagni dal database
+async function caricaBagni() {
+  try {
+    const res = await fetch(`${API}?action=getBagni`);
+    const data = await res.json();
+    tuttiBagni = Array.isArray(data) ? data : [];
+    renderLista(tuttiBagni);
+  } catch(e) {
+    // Se non ci sono dati ancora, mostra stato vuoto
+    document.getElementById('lista').innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
+        Nessun bagno ancora.<br>Sii il primo ad aggiungerne uno!
+      </div>`;
+  }
+}
+
+function getIconClass(tipo) {
+  if (!tipo) return 'g';
+  tipo = tipo.toLowerCase();
+  if (tipo.includes('pubblico')) return 'g';
+  if (tipo.includes('ristorante') || tipo.includes('pizza')) return 'r';
+  if (tipo.includes('bar') || tipo.includes('caffè')) return 'a';
+  return 'g';
+}
+
+function getIconSvg(tipo) {
+  if (!tipo) return '<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/><path d="M1 21h22"/>';
+  tipo = tipo.toLowerCase();
+  if (tipo.includes('bar') || tipo.includes('caffè')) return '<path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>';
+  return '<path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/><path d="M1 21h22"/>';
+}
+
+function renderLista(bagni) {
+  const lista = document.getElementById('lista');
+  document.getElementById('countLabel').textContent = `${bagni.length} trovati`;
+
+  if (bagni.length === 0) {
+    lista.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>Nessun bagno trovato.</div>`;
+    return;
+  }
+
+  lista.innerHTML = bagni.map((b, i) => {
+    const cl = getIconClass(b.tipo);
+    const ico = getIconSvg(b.tipo);
+    const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
+    const accessibile = b.accessibile === true || b.accessibile === 'TRUE' || b.accessibile === 'true';
+    const voto = b.voto ? parseFloat(b.voto).toFixed(1) : '—';
+    return `
+      <div class="item" onclick="openDetail(${i})">
+        <div class="item-icon ${cl}"><svg viewBox="0 0 24 24">${ico}</svg></div>
+        <div class="item-body">
+          <div class="item-name">${b.nome || 'Senza nome'}</div>
+          <div class="item-sub">${b.tipo || ''} ${b.indirizzo ? '· ' + b.indirizzo : ''}</div>
+          <div class="item-tags">
+            ${gratuito ? '<span class="itag g">Gratuito</span>' : '<span class="itag a">A pagamento</span>'}
+            ${accessibile ? '<span class="itag n">Accessibile</span>' : ''}
+          </div>
+        </div>
+        <div class="item-right">
+          <div class="item-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${voto}</div>
+          <div class="item-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filtraBagni() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let filtrati = tuttiBagni.filter(b =>
+    (b.nome||'').toLowerCase().includes(q) ||
+    (b.indirizzo||'').toLowerCase().includes(q) ||
+    (b.tipo||'').toLowerCase().includes(q)
+  );
+  if (filtroAttivo === 'gratuiti') filtrati = filtrati.filter(b => b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true');
+  if (filtroAttivo === 'accessibili') filtrati = filtrati.filter(b => b.accessibile === true || b.accessibile === 'TRUE' || b.accessibile === 'true');
+  if (filtroAttivo === 'puliti') filtrati = filtrati.filter(b => parseFloat(b.voto) >= 4);
+  renderLista(filtrati);
+}
+
+function setFiltro(f, el) {
+  filtroAttivo = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+  filtraBagni();
+}
+
+function setNav(el){document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('on'));el.classList.add('on');}
+function togExcl(el){el.closest('.tog-g').querySelectorAll('.tog').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+function setR(n){ratingSelezionato=n;document.querySelectorAll('.rstar').forEach((s,i)=>s.classList.toggle('on',i<n));}
+function openAdd(){document.getElementById('addOv').classList.add('show');}
+function closeOv(e,id){if(e.target.id===id)document.getElementById(id).classList.remove('show');}
+
+function showToast(msg, success=true) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3000);
+}
+
+async function doSubmit() {
+  const nome = document.getElementById('f-nome').value.trim();
+  if (!nome) { showToast('Inserisci il nome del luogo'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Salvataggio...';
+
+  const params = new URLSearchParams({
+    action: 'aggiungiBagno',
+    nome: nome,
+    tipo: document.getElementById('f-tipo').value,
+    indirizzo: document.getElementById('f-indirizzo').value,
+    gratuito: document.getElementById('tog-gratis').classList.contains('on'),
+    accessibile: document.getElementById('svc-accessibile').classList.contains('on'),
+    fasciatoio: document.getElementById('svc-fasciatoio').classList.contains('on'),
+    sapone: document.getElementById('svc-sapone').classList.contains('on'),
+    asciugamani: document.getElementById('svc-asciugamani').classList.contains('on'),
+    orario: document.getElementById('f-orario').value,
+    voto: ratingSelezionato,
+    aggiunto_da: 'utente',
+  });
+
+  try {
+    await fetch(`${API}?${params.toString()}`);
+    document.getElementById('addOv').classList.remove('show');
+    showToast('Bagno aggiunto con successo!');
+    await caricaBagni(); // ricarica lista
+  } catch(e) {
+    showToast('Errore. Riprova tra poco.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Aggiungi a PeeMap';
+}
+
+function openDetail(i) {
+  const b = tuttiBagni[i];
+  const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
+  const servizi = ['accessibile','fasciatoio','sapone','asciugamani']
+    .filter(s => b[s] === true || b[s] === 'TRUE' || b[s] === 'true')
+    .map(s => `<div class="svc"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${s.charAt(0).toUpperCase()+s.slice(1)}</div>`)
+    .join('');
+
+  document.getElementById('detSheet').innerHTML = `
+    <div class="sh-handle"></div>
+    <div class="det-photo"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+    <div class="det-body">
+      <div class="det-name">${b.nome}</div>
+      <div class="det-sub">${b.tipo || ''} ${b.indirizzo ? '· ' + b.indirizzo : ''}</div>
+      <div class="det-row">
+        <div class="det-stat"><div class="det-stat-val">${b.voto ? parseFloat(b.voto).toFixed(1) : '—'}</div><div class="det-stat-lbl">Voto</div></div>
+        <div class="det-stat"><div class="det-stat-val" style="font-size:0.8rem;color:${gratuito?'var(--green)':'var(--amber)'};">${gratuito?'Gratuito':'A pagamento'}</div><div class="det-stat-lbl">Costo</div></div>
+        <div class="det-stat"><div class="det-stat-val" style="font-size:0.8rem;">${b.orario||'—'}</div><div class="det-stat-lbl">Orario</div></div>
+      </div>
+      ${servizi ? `<div class="det-services">${servizi}</div>` : ''}
+      <div class="divider"></div>
+      <div class="det-ctas">
+        <button class="btn-nav"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Indicazioni</button>
+        <button class="btn-share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+      </div>
+    </div>`;
+  document.getElementById('detOv').classList.add('show');
+}
+
+// Avvio
+caricaBagni();
+</script>
+</body>
+</html>
