@@ -200,6 +200,37 @@
   .sbtn:active{transform:scale(0.97);}
   .sbtn:disabled{opacity:0.6;cursor:not-allowed;}
 
+
+  /* ── REVIEW POPUP ── */
+  .rev-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(3px);z-index:800;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+  .rev-overlay.show{opacity:1;pointer-events:all;}
+  .rev-sheet{width:100%;max-width:430px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:1.25rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform 0.35s cubic-bezier(.32,.72,0,1);}
+  .rev-overlay.show .rev-sheet{transform:translateY(0);}
+  .rev-step{display:none;}
+  .rev-step.active{display:block;}
+  .rev-emoji{font-size:2rem;text-align:center;margin-bottom:0.5rem;}
+  .rev-title{font-size:1rem;font-weight:800;text-align:center;margin-bottom:0.2rem;}
+  .rev-sub{font-size:0.78rem;color:var(--text2);text-align:center;margin-bottom:1.25rem;}
+  .rev-stars-big{display:flex;justify-content:center;gap:0.6rem;margin-bottom:1.25rem;}
+  .rev-star-big{cursor:pointer;transition:transform 0.15s;}
+  .rev-star-big svg{width:38px;height:38px;fill:var(--border2);transition:fill 0.15s,transform 0.15s;}
+  .rev-star-big.on svg{fill:var(--amber);}
+  .rev-star-big:active{transform:scale(1.2);}
+  .rev-quick{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:1rem;}
+  .rev-q{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:0.7rem 0.5rem;text-align:center;cursor:pointer;transition:all 0.15s;}
+  .rev-q-label{font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:0.5rem;}
+  .rev-q-btns{display:flex;gap:0.4rem;justify-content:center;}
+  .rev-qbtn{flex:1;padding:0.4rem;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.15s;}
+  .rev-qbtn.yes.on{background:var(--green-light);border-color:var(--green);color:var(--green);}
+  .rev-qbtn.no.on{background:var(--red-light);border-color:var(--red);color:var(--red);}
+  .rev-qbtn:active{transform:scale(0.95);}
+  .rev-textarea{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:0.65rem 0.85rem;font-family:Inter,sans-serif;font-size:0.85rem;color:var(--text);outline:none;resize:none;margin-bottom:0.75rem;}
+  .rev-textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+  .rev-skip{text-align:center;font-size:0.78rem;color:var(--text3);cursor:pointer;margin-top:0.5rem;padding:0.3rem;}
+  .rev-progress{display:flex;gap:0.3rem;justify-content:center;margin-bottom:1rem;}
+  .rev-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background 0.2s;}
+  .rev-dot.on{background:var(--blue);}
+
   .toast{position:fixed;top:1rem;left:50%;transform:translateX(-50%) translateY(-60px);background:var(--text);color:#fff;padding:0.65rem 1.2rem;border-radius:50px;font-size:0.8rem;font-weight:600;z-index:9000;white-space:nowrap;transition:transform 0.35s cubic-bezier(.34,1.56,.64,1);box-shadow:var(--shadow);display:flex;align-items:center;gap:0.4rem;}
   .toast svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;}
   .toast.show{transform:translateX(-50%) translateY(0);}
@@ -208,7 +239,31 @@
 <body>
 
 <div id="splash">
-  <div class="sp-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
+  <div class="sp-icon" style="background:transparent;box-shadow:none;width:90px;height:90px;"><svg viewBox="0 0 48 56" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <!-- Pin shape -->
+  <path d="M24 2C13.5 2 5 10.5 5 21c0 13.5 19 33 19 33s19-19.5 19-33C43 10.5 34.5 2 24 2z" fill="url(#pinGrad)" filter="drop-shadow(0 3px 6px rgba(37,99,235,0.4))"/>
+  <!-- White circle inside -->
+  <circle cx="24" cy="20" r="13" fill="white"/>
+  <!-- Woman figure -->
+  <circle cx="18.5" cy="11.5" r="2" fill="#1d4ed8"/>
+  <path d="M15.5 14.5h6l1.5 5h-9z" fill="#1d4ed8"/>
+  <path d="M15.5 19.5l-1.5 6h2.5l1.5-3.5 1.5 3.5h2.5l-1.5-6z" fill="#1d4ed8"/>
+  <path d="M16 18 Q14.5 20 15.5 21" stroke="#1d4ed8" stroke-width="0.8" fill="none"/>
+  <path d="M21 18 Q22 20 21 21" stroke="#1d4ed8" stroke-width="0.8" fill="none"/>
+  <!-- Divider -->
+  <line x1="24" y1="10" x2="24" y2="28" stroke="#1d4ed8" stroke-width="0.8" opacity="0.5"/>
+  <!-- Man figure -->
+  <circle cx="29.5" cy="11.5" r="2" fill="#1d4ed8"/>
+  <rect x="27" y="14" width="5" height="4.5" rx="0.5" fill="#1d4ed8"/>
+  <path d="M27.5 18.5l-1.5 6h2.5l1.5-3.5 1.5 3.5h2.5l-1.5-6z" fill="#1d4ed8"/>
+  <path d="M27 18 Q25.5 20 26.5 21" stroke="#1d4ed8" stroke-width="0.8" fill="none"/>
+</svg></div>
   <div class="sp-name">Pee<span>Map</span></div>
   <div class="sp-tag">Trova il bagno giusto, ovunque tu sia</div>
   <div class="sp-bar"><div class="sp-fill"></div></div>
@@ -222,7 +277,20 @@
 <div id="app">
   <div class="hdr">
     <div class="hdr-logo">
-      <div class="hdr-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg></div>
+      <div class="hdr-icon"><svg viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 1C6.5 1 2 5.5 2 11c0 7 10 17 10 17s10-10 10-17C22 5.5 17.5 1 12 1z" fill="white"/>
+  <circle cx="12" cy="10.5" r="6.5" fill="white" opacity="0.15"/>
+  <circle cx="9" cy="7" r="1" fill="white"/>
+  <path d="M7.5 8.5h3l.8 2.5H6.7z" fill="white"/>
+  <path d="M7 11l-.8 3.5h1.3l.8-2 .8 2h1.3L9.5 11z" fill="white"/>
+  <path d="M7.5 10.5Q6.5 11.5 7 12.2" stroke="white" stroke-width="0.5" fill="none"/>
+  <path d="M10.5 10.5Q11 11.5 10.5 12.2" stroke="white" stroke-width="0.5" fill="none"/>
+  <line x1="12" y1="5.5" x2="12" y2="15" stroke="white" stroke-width="0.6" opacity="0.7"/>
+  <circle cx="15" cy="7" r="1" fill="white"/>
+  <rect x="13.5" y="8.2" width="3" height="2.8" rx="0.3" fill="white"/>
+  <path d="M13.8 11l-.8 3.5h1.3l.8-2 .8 2h1.3L16.2 11z" fill="white"/>
+  <path d="M13.5 10.5Q12.5 11.5 13 12.2" stroke="white" stroke-width="0.5" fill="none"/>
+</svg></div>
       <div class="hdr-name">Pee<span>Map</span></div>
     </div>
     <div class="hdr-acts">
@@ -334,7 +402,7 @@
       </div>
       <div class="fl"><label>Servizi</label>
         <div class="tog-g" style="flex-wrap:wrap;gap:0.4rem;">
-          <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-accessibile" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;margin-right:3px;"><circle cx="12" cy="4" r="2"/><path d="M10 8h4l1 5h3v2h-4l-1-4h-2l1 6H9l-2-9h3z"/><path d="M7 20a4 4 0 014-4h2"/></svg>Accessibile</button>
+          <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-accessibile" onclick="this.classList.toggle('on')"><svg viewBox="0 0 24 24" style="width:14px;height:14px;margin-right:3px;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="4" r="2" fill="currentColor"/><path d="M9 7.5h4.5l1 4.5H18v2h-4l-1-4.5H9.5L8 20H6l1.5-12.5z" fill="currentColor"/><path d="M8.5 16.5A4.5 4.5 0 1013 21" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>Accessibile</button>
           <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-fasciatoio" onclick="this.classList.toggle('on')">Fasciatoio</button>
           <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-sapone" onclick="this.classList.toggle('on')">Sapone</button>
           <button class="tog" style="flex:1 1 calc(50% - 0.2rem);" id="svc-asciugamani" onclick="this.classList.toggle('on')">Asciugamani</button>
@@ -496,7 +564,9 @@ async function doSubmit() {
   btn.textContent = 'Aggiungi a PeeMap';
 }
 
+let currentDetailIndex = 0;
 function openDetail(i) {
+  currentDetailIndex = i;
   const b = tuttiBagni[i];
   const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
   const servizi = ['accessibile','fasciatoio','sapone','asciugamani']
@@ -518,7 +588,7 @@ function openDetail(i) {
       ${servizi ? `<div class="det-services">${servizi}</div>` : ''}
       <div class="divider"></div>
       <div class="det-ctas">
-        <button class="btn-nav"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Indicazioni</button>
+        <button class="btn-nav" onclick="portaMiLi(tuttiBagni[currentDetailIndex])"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Portami lì</button>
         <button class="btn-share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
       </div>
     </div>`;
@@ -561,8 +631,172 @@ async function usaGeolocalizzazione() {
   });
 }
 
+
+// ── REVIEW POPUP LOGIC ──
+let revData = { bagnoId: null, stelle: 0, carta: null, sapone_rev: null, pulito: null, accessibile_rev: null };
+let visitTimer = null;
+let watchId = null;
+let bagnoInVisita = null;
+
+function avviaMonitoraggioVisita(bagno) {
+  bagnoInVisita = bagno;
+  if (!navigator.geolocation || !bagno.lat || !bagno.lng) return;
+  if (watchId) navigator.geolocation.clearWatch(watchId);
+
+  watchId = navigator.geolocation.watchPosition((pos) => {
+    const dist = calcolaDistanza(pos.coords.latitude, pos.coords.longitude, parseFloat(bagno.lat), parseFloat(bagno.lng));
+    if (dist < 50) {
+      if (!visitTimer) {
+        visitTimer = setTimeout(() => {
+          mostraRevPopup(bagno);
+        }, 2 * 60 * 1000); // 2 minuti
+      }
+    } else {
+      if (visitTimer) { clearTimeout(visitTimer); visitTimer = null; }
+    }
+  }, null, { enableHighAccuracy: true, maximumAge: 10000 });
+}
+
+function calcolaDistanza(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function mostraRevPopup(bagno) {
+  revData = { bagnoId: bagno.id, stelle: 0, carta: null, sapone_rev: null, pulito: null, accessibile_rev: null };
+  goRevStep(1);
+  document.getElementById('revOverlay').classList.add('show');
+  if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+}
+
+function goRevStep(n) {
+  document.querySelectorAll('.rev-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('revStep' + n).classList.add('active');
+  document.querySelectorAll('.rev-dot').forEach((d, i) => d.classList.toggle('on', i < n));
+}
+
+function setRevStar(n) {
+  revData.stelle = n;
+  document.querySelectorAll('.rev-star-big').forEach((s, i) => s.classList.toggle('on', i < n));
+  setTimeout(() => goRevStep(2), 400);
+}
+
+function setRevQ(campo, val, btn) {
+  revData[campo === 'sapone' ? 'sapone_rev' : campo === 'accessibile' ? 'accessibile_rev' : campo] = val;
+  const parent = btn.closest('.rev-q-btns');
+  parent.querySelectorAll('.rev-qbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+async function submitRevPopup() {
+  const commento = document.getElementById('revComment').value.trim();
+  const params = new URLSearchParams({
+    action: 'aggiungiRecensione',
+    bagno_id: revData.bagnoId || '',
+    utente: 'utente',
+    voto: revData.stelle,
+    carta: revData.carta || '',
+    sapone: revData.sapone_rev || '',
+    pulito: revData.pulito || '',
+    accessibile: revData.accessibile_rev || '',
+    testo: commento
+  });
+  try { await fetch(`${API}?${params.toString()}`); } catch(e) {}
+  closeRevPopup();
+  showToast('Recensione inviata, grazie! 🙏');
+}
+
+function closeRevPopup() {
+  document.getElementById('revOverlay').classList.remove('show');
+  if (visitTimer) { clearTimeout(visitTimer); visitTimer = null; }
+}
+
+// Hook into "Portami lì" button — trigger visit monitoring
+function portaMiLi(bagno) {
+  closeRevPopup();
+  avviaMonitoraggioVisita(bagno);
+  showToast('Navigazione avviata!');
+}
+
 // Avvio
 caricaBagni();
 </script>
+
+<!-- REVIEW POPUP -->
+<div class="rev-overlay" id="revOverlay">
+  <div class="rev-sheet">
+    <div class="sh-handle"></div>
+    <div class="rev-progress">
+      <div class="rev-dot on" id="rdot0"></div>
+      <div class="rev-dot" id="rdot1"></div>
+      <div class="rev-dot" id="rdot2"></div>
+    </div>
+
+    <!-- STEP 1: Stars -->
+    <div class="rev-step active" id="revStep1">
+      <div class="rev-emoji">🚻</div>
+      <div class="rev-title">Com'era il bagno?</div>
+      <div class="rev-sub">La tua valutazione aiuta chi ne avrà bisogno dopo di te 😄</div>
+      <div class="rev-stars-big" id="revStarsBig">
+        <div class="rev-star-big" onclick="setRevStar(1)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="rev-star-big" onclick="setRevStar(2)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="rev-star-big" onclick="setRevStar(3)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="rev-star-big" onclick="setRevStar(4)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="rev-star-big" onclick="setRevStar(5)"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+      </div>
+      <div class="rev-skip" onclick="closeRevPopup()">Non ora</div>
+    </div>
+
+    <!-- STEP 2: Quick questions -->
+    <div class="rev-step" id="revStep2">
+      <div class="rev-title" style="margin-bottom:0.9rem;">Dettagli rapidi</div>
+      <div class="rev-quick">
+        <div class="rev-q">
+          <div class="rev-q-label">Carta igienica</div>
+          <div class="rev-q-btns">
+            <button class="rev-qbtn yes" onclick="setRevQ('carta','si',this)">✓</button>
+            <button class="rev-qbtn no" onclick="setRevQ('carta','no',this)">✗</button>
+          </div>
+        </div>
+        <div class="rev-q">
+          <div class="rev-q-label">Sapone</div>
+          <div class="rev-q-btns">
+            <button class="rev-qbtn yes" onclick="setRevQ('sapone','si',this)">✓</button>
+            <button class="rev-qbtn no" onclick="setRevQ('sapone','no',this)">✗</button>
+          </div>
+        </div>
+        <div class="rev-q">
+          <div class="rev-q-label">Pulito</div>
+          <div class="rev-q-btns">
+            <button class="rev-qbtn yes" onclick="setRevQ('pulito','si',this)">✓</button>
+            <button class="rev-qbtn no" onclick="setRevQ('pulito','no',this)">✗</button>
+          </div>
+        </div>
+        <div class="rev-q">
+          <div class="rev-q-label">Accessibile</div>
+          <div class="rev-q-btns">
+            <button class="rev-qbtn yes" onclick="setRevQ('accessibile','si',this)">✓</button>
+            <button class="rev-qbtn no" onclick="setRevQ('accessibile','no',this)">✗</button>
+          </div>
+        </div>
+      </div>
+      <button class="sbtn" onclick="goRevStep(3)">Avanti</button>
+      <div class="rev-skip" onclick="closeRevPopup()">Salta</div>
+    </div>
+
+    <!-- STEP 3: Optional comment -->
+    <div class="rev-step" id="revStep3">
+      <div class="rev-title" style="margin-bottom:0.5rem;">Vuoi aggiungere altro?</div>
+      <div class="rev-sub" style="margin-bottom:0.9rem;">Opzionale — bastano anche 5 parole 😄</div>
+      <textarea class="rev-textarea" id="revComment" rows="3" placeholder="Es. Molto pulito, carta presente, consigliato!"></textarea>
+      <button class="sbtn" onclick="submitRevPopup()">Invia recensione</button>
+      <div class="rev-skip" onclick="closeRevPopup()">Salta</div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
