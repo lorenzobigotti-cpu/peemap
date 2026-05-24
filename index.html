@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>PeeMap</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCCXEo-ZC3TmWEWY_lAsSo2ljoesKmwlHo&libraries=places&callback=initMap" async defer></script>
 <style>
   :root {
     --white:#ffffff;--bg:#f7f8fa;--bg2:#f0f2f5;--border:#e4e7eb;--border2:#d1d5db;
@@ -55,15 +56,8 @@
   .srch input{flex:1;border:none;background:none;outline:none;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);}
   .srch input::placeholder{color:var(--text3);}
 
-  .map-area{height:215px;position:relative;background:#e8eff8;overflow:hidden;border-bottom:1px solid var(--border);}
-  .map-base{width:100%;height:100%;background:#e8eff5;position:relative;}
-  .rd{position:absolute;background:#fff;border-radius:1px;}
-  .rd.h{height:9px;left:0;right:0;}
-  .rd.v{width:9px;top:0;bottom:0;}
-  .rd.h2{height:5px;left:0;right:0;}
-  .rd.v2{width:5px;top:0;bottom:0;}
-  .blk{position:absolute;background:#d8e4f0;border-radius:3px;}
-  .grn{position:absolute;background:#c8dfc8;border-radius:4px;}
+  .map-area{height:260px;position:relative;background:#e8eff8;overflow:hidden;border-bottom:1px solid var(--border);}
+  #googleMap{width:100%;height:100%;}
 
   .mpin{position:absolute;cursor:pointer;display:flex;flex-direction:column;align-items:center;animation:pinIn 0.4s cubic-bezier(.34,1.56,.64,1) both;z-index:10;}
   @keyframes pinIn{from{opacity:0;transform:translateY(-10px) scale(0.5);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -73,10 +67,7 @@
   .mpin-body.a{background:var(--amber);}
   .mpin-body svg{transform:rotate(45deg);width:14px;height:14px;fill:#fff;}
 
-  .udot{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;}
-  .udot-ring{position:absolute;width:32px;height:32px;border-radius:50%;background:rgba(37,99,235,0.15);top:50%;left:50%;transform:translate(-50%,-50%);animation:uRing 2s ease-in-out infinite;}
-  .udot-core{width:12px;height:12px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.2);position:relative;z-index:1;}
-  @keyframes uRing{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.8;}50%{transform:translate(-50%,-50%) scale(1.8);opacity:0;}}
+
 
   .map-badge{position:absolute;top:10px;left:10px;background:rgba(255,255,255,0.95);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:7px;padding:0.3rem 0.65rem;font-size:0.7rem;font-weight:600;color:var(--blue);display:flex;align-items:center;gap:0.3rem;box-shadow:var(--shadow-xs);}
   .map-ctrls{position:absolute;bottom:10px;right:10px;display:flex;flex-direction:column;gap:4px;}
@@ -307,23 +298,7 @@
   </div>
 
   <div class="map-area">
-    <div class="map-base">
-      <div class="blk" style="top:5%;left:5%;width:18%;height:22%;"></div>
-      <div class="blk" style="top:5%;left:38%;width:22%;height:18%;"></div>
-      <div class="blk" style="top:5%;right:5%;width:20%;height:25%;"></div>
-      <div class="blk" style="top:38%;left:5%;width:15%;height:20%;"></div>
-      <div class="blk" style="top:45%;right:5%;width:18%;height:18%;"></div>
-      <div class="blk" style="bottom:8%;left:35%;width:25%;height:20%;"></div>
-      <div class="grn" style="top:60%;left:8%;width:22%;height:28%;opacity:0.7;"></div>
-      <div class="rd h" style="top:32%;"></div>
-      <div class="rd h2" style="top:57%;opacity:0.6;"></div>
-      <div class="rd v" style="left:30%;"></div>
-      <div class="rd v2" style="left:65%;opacity:0.6;"></div>
-      <div class="udot"><div class="udot-ring"></div><div class="udot-core"></div></div>
-      <div id="mapPins"></div>
-      <div class="map-badge">Posizione attuale</div>
-      <div class="map-ctrls"><div class="mctrl">+</div><div class="mctrl">−</div></div>
-    </div>
+    <div id="googleMap"></div>
   </div>
 
   <div class="filters">
@@ -432,6 +407,7 @@ async function caricaBagni() {
     const data = await res.json();
     tuttiBagni = Array.isArray(data) ? data : [];
     renderLista(tuttiBagni);
+    if (map) aggiornaMappaMarkers(tuttiBagni);
   } catch(e) {
     // Se non ci sono dati ancora, mostra stato vuoto
     document.getElementById('lista').innerHTML = `
@@ -551,6 +527,21 @@ async function doSubmit() {
     aggiunto_da: 'utente',
   });
 
+  // Try to geocode address to get lat/lng
+  try {
+    const addr = document.getElementById('f-indirizzo').value + ' ' + citta;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: addr }, (results, status) => {
+      if (status === 'OK') {
+        params.set('lat', results[0].geometry.location.lat());
+        params.set('lng', results[0].geometry.location.lng());
+      }
+    });
+  } catch(e) {}
+  
+  // Wait a moment for geocoding then submit
+  await new Promise(r => setTimeout(r, 800));
+
   try {
     await fetch(`${API}?${params.toString()}`);
     document.getElementById('addOv').classList.remove('show');
@@ -631,6 +622,96 @@ async function usaGeolocalizzazione() {
   });
 }
 
+
+
+let map = null;
+let mapMarkers = [];
+let userMarker = null;
+let infoWindow = null;
+
+// Custom pin SVG for Google Maps
+const PIN_SVG_GREEN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48"><path d="M20 2C12 2 5 9 5 17c0 11 15 29 15 29s15-18 15-29C35 9 28 2 20 2z" fill="#16a34a" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/><circle cx="20" cy="17" r="11" fill="white"/><text x="20" y="22" text-anchor="middle" font-size="13">🚻</text></svg>`;
+const PIN_SVG_RED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48"><path d="M20 2C12 2 5 9 5 17c0 11 15 29 15 29s15-18 15-29C35 9 28 2 20 2z" fill="#dc2626" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/><circle cx="20" cy="17" r="11" fill="white"/><text x="20" y="22" text-anchor="middle" font-size="13">🚻</text></svg>`;
+const PIN_SVG_AMBER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48"><path d="M20 2C12 2 5 9 5 17c0 11 15 29 15 29s15-18 15-29C35 9 28 2 20 2z" fill="#d97706" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/><circle cx="20" cy="17" r="11" fill="white"/><text x="20" y="22" text-anchor="middle" font-size="13">🚻</text></svg>`;
+
+function initMap() {
+  // Default center: Rome (will update with geolocation)
+  const defaultCenter = { lat: 41.9028, lng: 12.4964 };
+  
+  map = new google.maps.Map(document.getElementById('googleMap'), {
+    zoom: 15,
+    center: defaultCenter,
+    disableDefaultUI: true,
+    zoomControl: true,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: false,
+    styles: [
+      { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+      { featureType: "transit", stylers: [{ visibility: "simplified" }] }
+    ]
+  });
+
+  infoWindow = new google.maps.InfoWindow();
+
+  // Get user position
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      map.setCenter(userPos);
+
+      // Blue dot for user
+      userMarker = new google.maps.Marker({
+        position: userPos,
+        map: map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: '#2563eb',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2.5,
+        },
+        title: 'La tua posizione',
+        zIndex: 999
+      });
+    }, () => {});
+  }
+
+  // Load markers after map init
+  caricaBagni();
+}
+
+function aggiornaMappaMarkers(bagni) {
+  // Clear old markers
+  mapMarkers.forEach(m => m.setMap(null));
+  mapMarkers = [];
+
+  bagni.forEach((b, i) => {
+    if (!b.lat || !b.lng || b.lat === '' || b.lng === '') return;
+    const lat = parseFloat(b.lat);
+    const lng = parseFloat(b.lng);
+    if (isNaN(lat) || isNaN(lng)) return;
+
+    const voto = parseFloat(b.voto) || 0;
+    const pinSvg = voto >= 4 ? PIN_SVG_GREEN : voto >= 3 ? PIN_SVG_AMBER : PIN_SVG_RED;
+
+    const marker = new google.maps.Marker({
+      position: { lat, lng },
+      map: map,
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(pinSvg),
+        scaledSize: new google.maps.Size(36, 44),
+        anchor: new google.maps.Point(18, 44),
+      },
+      title: b.nome,
+      zIndex: 100
+    });
+
+    marker.addListener('click', () => openDetail(i));
+    mapMarkers.push(marker);
+  });
+}
 
 // ── REVIEW POPUP LOGIC ──
 let revData = { bagnoId: null, stelle: 0, carta: null, sapone_rev: null, pulito: null, accessibile_rev: null };
@@ -716,9 +797,15 @@ function closeRevPopup() {
 
 // Hook into "Portami lì" button — trigger visit monitoring
 function portaMiLi(bagno) {
+  if (!bagno) return;
   closeRevPopup();
   avviaMonitoraggioVisita(bagno);
-  showToast('Navigazione avviata!');
+  if (bagno.lat && bagno.lng) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${bagno.lat},${bagno.lng}`, '_blank');
+  } else if (bagno.indirizzo) {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(bagno.indirizzo + ' ' + (bagno.citta||''))}`, '_blank');
+  }
+  showToast('Apertura Google Maps...');
 }
 
 // Avvio
