@@ -8,6 +8,105 @@
 <title>PeeMap</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCCXEo-ZC3TmWEWY_lAsSo2ljoesKmwlHo&libraries=places&callback=initMap" async defer></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAyDbZJcQ1ZY8ZRuaVMfvqtpPr97g3vI_k",
+    authDomain: "peemap-497315.firebaseapp.com",
+    projectId: "peemap-497315",
+    storageBucket: "peemap-497315.firebasestorage.app",
+    messagingSenderId: "303944496163",
+    appId: "1:303944496163:web:a433049860abc8d193ed96"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // Rendi funzioni disponibili globalmente
+  window.loginGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      window.utenteCorrente = user;
+      aggiornaUIUtente(user);
+      showToast('Benvenuto ' + user.displayName + '! 👋');
+    } catch(e) {
+      console.error(e);
+      showToast('Errore nel login. Riprova.');
+    }
+  };
+
+  window.logoutGoogle = async () => {
+    await signOut(auth);
+    window.utenteCorrente = null;
+    aggiornaUIUtente(null);
+    showToast('Hai effettuato il logout.');
+    document.getElementById('profileSheet').classList.remove('show');
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    window.utenteCorrente = user || null;
+    aggiornaUIUtente(user);
+  });
+
+  function aggiornaUIUtente(user) {
+    const avatar = document.getElementById('headerAvatar');
+    if (!avatar) return;
+    if (user) {
+      avatar.innerHTML = user.photoURL
+        ? `<img src="${user.photoURL}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">`
+        : `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      avatar.style.background = user.photoURL ? 'transparent' : 'var(--blue)';
+      avatar.style.border = user.photoURL ? '2px solid var(--blue)' : '1px solid var(--border)';
+    } else {
+      avatar.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      avatar.style.background = 'var(--bg)';
+      avatar.style.border = '1px solid var(--border)';
+    }
+    // Aggiorna profilo sheet se aperto
+    aggiornaProfiloSheet(user);
+  }
+
+  window.aggiornaProfiloSheet = function(user) {
+    const sheet = document.getElementById('profileContent');
+    if (!sheet) return;
+    if (user) {
+      sheet.innerHTML = `
+        <div style="text-align:center;padding:1rem 0 1.5rem;">
+          ${user.photoURL ? `<img src="${user.photoURL}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:0.75rem;border:3px solid var(--blue-mid);">` : `<div style="width:72px;height:72px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;font-size:1.8rem;color:#fff;">${user.displayName?user.displayName[0].toUpperCase():'U'}</div>`}
+          <div style="font-size:1rem;font-weight:800;">${user.displayName || 'Utente'}</div>
+          <div style="font-size:0.8rem;color:var(--text2);margin-top:0.2rem;">${user.email}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:0.75rem;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:0.85rem;font-weight:600;">I tuoi bagni aggiunti</span>
+          <span style="font-size:0.85rem;color:var(--blue);font-weight:700;">0</span>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:0.85rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:0.85rem;font-weight:600;">Le tue recensioni</span>
+          <span style="font-size:0.85rem;color:var(--blue);font-weight:700;">0</span>
+        </div>
+        <button onclick="window.logoutGoogle()" style="width:100%;padding:0.85rem;border-radius:12px;background:var(--red-light);border:1px solid var(--red);color:var(--red);font-family:Inter,sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;">Esci dall'account</button>
+      `;
+    } else {
+      sheet.innerHTML = `
+        <div style="text-align:center;padding:1rem 0 1.5rem;">
+          <div style="width:72px;height:72px;border-radius:50%;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;">
+            <svg viewBox="0 0 24 24" style="width:32px;height:32px;stroke:var(--text3);fill:none;stroke-width:1.5;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div style="font-size:1rem;font-weight:800;margin-bottom:0.3rem;">Accedi a PeeMap</div>
+          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:1.5rem;">Salva i tuoi bagni preferiti e tieni traccia delle tue recensioni</div>
+        </div>
+        <button onclick="window.loginGoogle()" style="width:100%;padding:0.9rem;border-radius:12px;background:#fff;border:1.5px solid var(--border);color:var(--text);font-family:Inter,sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.6rem;box-shadow:var(--shadow-sm);margin-bottom:0.5rem;">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Continua con Google
+        </button>
+      `;
+    }
+  };
+</script>
 <style>
   :root {
     --white:#ffffff;--bg:#f7f8fa;--bg2:#f0f2f5;--border:#e4e7eb;--border2:#d1d5db;
@@ -379,7 +478,7 @@
   <div class="nitem on"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg><span>Mappa</span></div>
   <div class="nitem" onclick="setNav(this)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span>Cerca</span></div>
   <div class="nitem" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span>Salvati</span></div>
-  <div class="nitem" onclick="setNav(this)"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profilo</span></div>
+  <div class="nitem" onclick="setNav(this);openProfile()"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Profilo</span></div>
 </div>
 
 <!-- DETAIL -->
@@ -572,6 +671,12 @@ function setFiltro(f, el) {
 function setNav(el){document.querySelectorAll('.nitem').forEach(n=>n.classList.remove('on'));el.classList.add('on');}
 function togExcl(el){el.closest('.tog-g').querySelectorAll('.tog').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 function setR(n){ratingSelezionato=n;document.querySelectorAll('.rstar').forEach((s,i)=>s.classList.toggle('on',i<n));}
+
+function openProfile() {
+  document.getElementById('profileSheet').classList.add('show');
+  if (window.aggiornaProfiloSheet) window.aggiornaProfiloSheet(window.utenteCorrente || null);
+}
+
 function openAdd(){document.getElementById('addOv').classList.add('show');}
 function closeOv(e,id){if(e.target.id===id)document.getElementById(id).classList.remove('show');}
 
@@ -611,7 +716,7 @@ async function doSubmit() {
     asciugamani: document.getElementById('svc-asciugamani').classList.contains('on'),
     orario: document.getElementById('f-orario').value,
     voto: ratingSelezionato,
-    aggiunto_da: 'utente',
+    aggiunto_da: window.utenteCorrente ? window.utenteCorrente.email : 'anonimo',
   });
 
   try {
@@ -1173,6 +1278,20 @@ caricaBagni();
     </div>
     <button class="loc-card-btn" onclick="richiediPosizione()">Attiva la posizione</button>
     <div class="loc-card-skip" onclick="chiudiLocPopup()">Continua senza posizione</div>
+  </div>
+</div>
+
+
+<!-- PROFILE SHEET -->
+<div class="overlay" id="profileSheet" onclick="closeOv(event,'profileSheet')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div style="padding:1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));">
+      <div style="font-size:1rem;font-weight:800;margin-bottom:1rem;">Il mio profilo</div>
+      <div id="profileContent">
+        <div class="loading"><div class="loading-spinner"></div>Caricamento...</div>
+      </div>
+    </div>
   </div>
 </div>
 
