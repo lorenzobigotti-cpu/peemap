@@ -225,6 +225,19 @@
   }
   .map-sat-btn:active{background:var(--bg);}
 
+
+  /* LOCATION POPUP */
+  .loc-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+  .loc-overlay.show{opacity:1;pointer-events:all;}
+  .loc-card{background:#fff;border-radius:20px;padding:1.75rem 1.5rem;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);transform:scale(0.9);transition:transform 0.3s;}
+  .loc-overlay.show .loc-card{transform:scale(1);}
+  .loc-card-icon{width:64px;height:64px;background:var(--blue-light);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;}
+  .loc-card-icon svg{width:32px;height:32px;stroke:var(--blue);fill:none;stroke-width:1.8;}
+  .loc-card-title{font-size:1rem;font-weight:800;margin-bottom:0.5rem;}
+  .loc-card-text{font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:1.25rem;}
+  .loc-card-btn{width:100%;padding:0.85rem;border-radius:12px;background:var(--blue);color:#fff;font-family:Inter,sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;border:none;box-shadow:0 4px 12px rgba(37,99,235,0.25);margin-bottom:0.5rem;}
+  .loc-card-skip{font-size:0.78rem;color:var(--text3);cursor:pointer;padding:0.3rem;}
+
   /* ── REVIEW POPUP ── */
   .rev-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(3px);z-index:800;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity 0.3s;}
   .rev-overlay.show{opacity:1;pointer-events:all;}
@@ -452,8 +465,12 @@ async function caricaBagni() {
     const res = await fetch(`${API}?action=getBagni`);
     const data = await res.json();
     tuttiBagni = Array.isArray(data) ? data : [];
-    renderLista(tuttiBagni);
-    if (map) aggiornaMappaMarkers(tuttiBagni);
+    if (map) {
+      aggiornaMappaMarkers(tuttiBagni);
+      aggiornListaPerArea();
+    } else {
+      renderLista(tuttiBagni);
+    }
   } catch(e) {
     // Se non ci sono dati ancora, mostra stato vuoto
     document.getElementById('lista').innerHTML = `
@@ -749,6 +766,22 @@ const PIN_SVG_GREEN = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 4
 const PIN_SVG_RED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48"><path d="M20 2C12 2 5 9 5 17c0 11 15 29 15 29s15-18 15-29C35 9 28 2 20 2z" fill="#dc2626" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/><circle cx="20" cy="17" r="11" fill="white"/><text x="20" y="22" text-anchor="middle" font-size="13">🚻</text></svg>`;
 const PIN_SVG_AMBER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48"><path d="M20 2C12 2 5 9 5 17c0 11 15 29 15 29s15-18 15-29C35 9 28 2 20 2z" fill="#d97706" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/><circle cx="20" cy="17" r="11" fill="white"/><text x="20" y="22" text-anchor="middle" font-size="13">🚻</text></svg>`;
 
+
+function aggiornListaPerArea() {
+  if (!map) { renderLista(tuttiBagni); return; }
+  const bounds = map.getBounds();
+  if (!bounds) { renderLista(tuttiBagni); return; }
+  const visibili = tuttiBagni.filter(b => {
+    if (!b.lat || !b.lng) return false;
+    const lat = parseFloat(b.lat);
+    const lng = parseFloat(b.lng);
+    if (isNaN(lat) || isNaN(lng)) return false;
+    return bounds.contains({ lat, lng });
+  });
+  // Se nessun bagno nell'area mostra tutti
+  renderLista(visibili.length > 0 ? visibili : tuttiBagni);
+}
+
 function initMap() {
   // Default center: Rome (will update with geolocation)
   const defaultCenter = { lat: 41.9028, lng: 12.4964 };
@@ -792,6 +825,11 @@ function initMap() {
       });
     }, () => {});
   }
+
+  // Update list when map moves
+  map.addListener('bounds_changed', () => {
+    if (tuttiBagni.length > 0) aggiornListaPerArea();
+  });
 
   // Load markers after map init
   caricaBagni();
@@ -1023,9 +1061,70 @@ function portaMiLi(bagno) {
   showToast('Apertura Google Maps...');
 }
 
+
+function controllaLocalizzazione() {
+  if (!navigator.geolocation) return;
+  navigator.permissions.query({ name: 'geolocation' }).then(result => {
+    if (result.state === 'denied' || result.state === 'prompt') {
+      setTimeout(() => document.getElementById('locPopup').classList.add('show'), 1500);
+    }
+  }).catch(() => {
+    // Fallback: prova direttamente
+    navigator.geolocation.getCurrentPosition(
+      () => {},
+      () => setTimeout(() => document.getElementById('locPopup').classList.add('show'), 1500)
+    );
+  });
+}
+
+function richiediPosizione() {
+  chiudiLocPopup();
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (map) {
+        map.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        map.setZoom(16);
+      }
+      centraSuPosizione();
+    },
+    () => showToast('Attiva la posizione nelle impostazioni del telefono')
+  );
+}
+
+function chiudiLocPopup() {
+  document.getElementById('locPopup').classList.remove('show');
+}
+
+function condividi(bagno) {
+  const testo = `Guarda questo bagno su PeeMap: ${bagno.nome} - ${bagno.indirizzo || ''} ${bagno.citta || ''}`;
+  if (navigator.share) {
+    navigator.share({ title: 'PeeMap', text: testo, url: window.location.href });
+  } else {
+    navigator.clipboard.writeText(testo).then(() => showToast('Link copiato!'));
+  }
+}
+
 // Avvio
+controllaLocalizzazione();
 caricaBagni();
 </script>
+
+
+<!-- LOCATION POPUP -->
+<div class="loc-overlay" id="locPopup">
+  <div class="loc-card">
+    <div class="loc-card-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="2 3" opacity="0.5"/></svg>
+    </div>
+    <div class="loc-card-title">Attiva la localizzazione 📍</div>
+    <div class="loc-card-text">
+      Per trovare i bagni vicino a te, PeeMap ha bisogno di sapere dove sei.<br><br>
+      <strong>Attiva la posizione</strong> e abilitala per il browser che stai utilizzando 😊
+    </div>
+    <button class="loc-card-btn" onclick="richiediPosizione()">Attiva la posizione</button>
+    <div class="loc-card-skip" onclick="chiudiLocPopup()">Continua senza posizione</div>
+  </div>
+</div>
 
 <!-- REVIEW POPUP -->
 <div class="rev-overlay" id="revOverlay">
