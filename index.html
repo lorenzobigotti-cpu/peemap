@@ -502,29 +502,47 @@ function renderLista(bagni) {
   document.getElementById('countLabel').textContent = `${bagni.length} trovati`;
 
   if (bagni.length === 0) {
-    lista.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>Nessun bagno trovato.</div>`;
+    lista.innerHTML = `
+      <div class="empty">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
+        <div style="font-weight:600;margin-bottom:0.3rem;">Nessun bagno in questa area</div>
+        <div style="font-size:0.78rem;">Sposta la mappa o aggiungine uno tu!</div>
+      </div>`;
     return;
   }
 
-  lista.innerHTML = bagni.map((b, i) => {
+  // Ottieni indice globale reale
+  lista.innerHTML = bagni.map((b) => {
+    const i = tuttiBagni.indexOf(b);
     const cl = getIconClass(b.tipo);
     const ico = getIconSvg(b.tipo);
     const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
     const accessibile = b.accessibile === true || b.accessibile === 'TRUE' || b.accessibile === 'true';
-    const voto = b.voto ? parseFloat(b.voto).toFixed(1) : '—';
+    const voto = b.voto ? parseFloat(b.voto) : 0;
+    const votoColor = voto >= 4 ? 'var(--green)' : voto >= 3 ? 'var(--amber)' : voto > 0 ? 'var(--red)' : 'var(--text3)';
+    const starsHtml = Array.from({length:5}, (_,j) =>
+      `<svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:${j < Math.round(voto) ? 'var(--amber)' : 'var(--border2)'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+    ).join('');
+    const distanza = b._distanza ? (b._distanza < 1000 ? Math.round(b._distanza) + ' m' : (b._distanza/1000).toFixed(1) + ' km') : '';
+
     return `
       <div class="item" onclick="openDetail(${i})">
         <div class="item-icon ${cl}"><svg viewBox="0 0 24 24">${ico}</svg></div>
         <div class="item-body">
           <div class="item-name">${b.nome || 'Senza nome'}</div>
-          <div class="item-sub">${b.tipo || ''} ${b.indirizzo ? '· ' + b.indirizzo : ''}</div>
+          <div class="item-sub">${b.tipo || ''} ${b.citta ? '· ' + b.citta : ''}</div>
+          <div style="display:flex;gap:2px;margin-bottom:0.3rem;">${starsHtml}</div>
           <div class="item-tags">
             ${gratuito ? '<span class="itag g">Gratuito</span>' : '<span class="itag a">A pagamento</span>'}
             ${accessibile ? '<span class="itag n">Accessibile</span>' : ''}
           </div>
         </div>
         <div class="item-right">
-          <div class="item-rating"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${voto}</div>
+          <div class="item-rating" style="color:${votoColor};">
+            <svg viewBox="0 0 24 24" style="fill:${voto>0?'var(--amber)':'var(--border2)'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            ${voto > 0 ? voto.toFixed(1) : '—'}
+          </div>
+          ${distanza ? `<div class="item-dist">${distanza}</div>` : ''}
           <div class="item-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
         </div>
       </div>`;
@@ -584,6 +602,8 @@ async function doSubmit() {
     citta: citta,
     lat: lat,
     lng: lng,
+    voto: ratingSelezionato || '',
+    note: document.getElementById('f-recensione') ? document.getElementById('f-recensione').value : '',
     gratuito: document.getElementById('tog-gratis').classList.contains('on'),
     accessibile: document.getElementById('svc-accessibile').classList.contains('on'),
     fasciatoio: document.getElementById('svc-fasciatoio').classList.contains('on'),
@@ -693,9 +713,10 @@ function centraSuPosizione() {
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      posUtenteCorrente = userPos;
       if (map) {
         map.setCenter(userPos);
-        map.setZoom(16);
+        map.setZoom(15);
         // Update or create user marker
         if (userMarker) {
           userMarker.setPosition(userPos);
@@ -767,19 +788,36 @@ const PIN_SVG_RED = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48"
 const PIN_SVG_AMBER = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" width="40" height="48"><path d="M20 2C12 2 5 9 5 17c0 11 15 29 15 29s15-18 15-29C35 9 28 2 20 2z" fill="#d97706" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/><circle cx="20" cy="17" r="11" fill="white"/><text x="20" y="22" text-anchor="middle" font-size="13">🚻</text></svg>`;
 
 
+let posUtenteCorrente = null;
+
 function aggiornListaPerArea() {
   if (!map) { renderLista(tuttiBagni); return; }
   const bounds = map.getBounds();
   if (!bounds) { renderLista(tuttiBagni); return; }
-  const visibili = tuttiBagni.filter(b => {
+
+  // Filtra per bounds visibili sulla mappa
+  let visibili = tuttiBagni.filter(b => {
     if (!b.lat || !b.lng) return false;
     const lat = parseFloat(b.lat);
     const lng = parseFloat(b.lng);
     if (isNaN(lat) || isNaN(lng)) return false;
     return bounds.contains({ lat, lng });
   });
-  // Se nessun bagno nell'area mostra tutti
-  renderLista(visibili.length > 0 ? visibili : tuttiBagni);
+
+  // Calcola distanza se abbiamo posizione utente
+  if (posUtenteCorrente) {
+    visibili = visibili.map(b => {
+      const dist = calcolaDistanza(
+        posUtenteCorrente.lat, posUtenteCorrente.lng,
+        parseFloat(b.lat), parseFloat(b.lng)
+      );
+      return { ...b, _distanza: dist };
+    });
+    // Ordina per distanza
+    visibili.sort((a, b) => a._distanza - b._distanza);
+  }
+
+  renderLista(visibili);
 }
 
 function initMap() {
@@ -806,7 +844,9 @@ function initMap() {
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((pos) => {
       const userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      posUtenteCorrente = userPos;
       map.setCenter(userPos);
+      map.setZoom(15);
 
       // Blue dot for user
       userMarker = new google.maps.Marker({
@@ -823,6 +863,9 @@ function initMap() {
         title: 'La tua posizione',
         zIndex: 999
       });
+
+      // Aggiorna lista con distanze
+      if (tuttiBagni.length > 0) aggiornListaPerArea();
     }, () => {});
   }
 
