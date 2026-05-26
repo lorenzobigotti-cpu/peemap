@@ -513,7 +513,7 @@ function renderLista(bagni) {
 
   // Ottieni indice globale reale
   lista.innerHTML = bagni.map((b) => {
-    const i = tuttiBagni.indexOf(b);
+    const i = tuttiBagni.findIndex(x => x.id === b.id);
     const cl = getIconClass(b.tipo);
     const ico = getIconSvg(b.tipo);
     const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
