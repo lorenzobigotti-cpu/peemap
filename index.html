@@ -649,9 +649,16 @@ function openDetail(i) {
         <div class="det-stat"><div class="det-stat-val" style="font-size:0.8rem;">${b.orario||'—'}</div><div class="det-stat-lbl">Orario</div></div>
       </div>
       ${servizi ? `<div class="det-services">${servizi}</div>` : ''}
+
+      ${b.note ? `
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">
+          <div style="font-size:0.72rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:0.35rem;">📝 Note</div>
+          <div style="font-size:0.85rem;color:var(--text);line-height:1.55;">${b.note}</div>
+        </div>` : ''}
+
       <div class="divider"></div>
       <div class="det-ctas">
-        <button class="btn-nav" onclick="portaMiLi(tuttiBagni[currentDetailIndex])"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Portami lì</button>
+        <button class="btn-nav" onclick="portaMiLi(b)"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Portami lì</button>
         <button class="btn-share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
       </div>
     </div>`;
