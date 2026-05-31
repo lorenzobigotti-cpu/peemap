@@ -325,6 +325,37 @@
   .map-sat-btn:active{background:var(--bg);}
 
 
+
+  /* CERCA SCREEN */
+  .cerca-wrap{padding:0.75rem 1rem 0.5rem;background:#fff;border-bottom:1px solid var(--border);}
+  .cerca-results{padding:0 0 6rem;background:var(--bg);}
+
+  /* SALVATI */
+  .salvati-empty{padding:3rem 1.5rem;text-align:center;}
+  .salvati-empty svg{width:48px;height:48px;stroke:var(--border2);fill:none;stroke-width:1.5;display:block;margin:0 auto 1rem;}
+  .salvati-empty-title{font-size:0.95rem;font-weight:700;margin-bottom:0.4rem;}
+  .salvati-empty-sub{font-size:0.8rem;color:var(--text2);}
+
+  /* NOTIFICHE */
+  .notif-item{background:#fff;border-bottom:1px solid var(--border);padding:0.9rem 1rem;display:flex;gap:0.85rem;align-items:flex-start;}
+  .notif-icon{width:40px;height:40px;border-radius:10px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .notif-icon svg{width:18px;height:18px;stroke:var(--blue);fill:none;stroke-width:2;}
+  .notif-title{font-size:0.85rem;font-weight:600;margin-bottom:0.2rem;}
+  .notif-sub{font-size:0.78rem;color:var(--text2);line-height:1.5;}
+  .notif-time{font-size:0.7rem;color:var(--text3);margin-top:0.3rem;}
+  .notif-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:0.35rem;}
+
+  /* HEART BUTTON */
+  .heart-btn{
+    width:44px;height:44px;border-radius:var(--r-sm);
+    background:var(--bg);border:1px solid var(--border);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all 0.15s;
+  }
+  .heart-btn svg{width:18px;height:18px;stroke:var(--text2);fill:none;stroke-width:2;transition:all 0.15s;}
+  .heart-btn.saved svg{stroke:var(--red);fill:var(--red);}
+  .heart-btn:active{transform:scale(0.9);}
+
   /* LOCATION POPUP */
   .loc-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;pointer-events:none;transition:opacity 0.3s;}
   .loc-overlay.show{opacity:1;pointer-events:all;}
@@ -467,6 +498,52 @@
 
   <div class="list" id="lista">
     <div class="loading"><div class="loading-spinner"></div>Caricamento bagni...</div>
+  </div>
+</div>
+
+
+<!-- CERCA TAB -->
+<div id="tab-cerca" style="display:none;flex-direction:column;flex:1;background:var(--bg);padding-bottom:6rem;">
+  <div style="background:#fff;padding:0.85rem 1rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;">
+    <div class="srch" style="margin:0;">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="cercaInput" placeholder="Cerca bagni per luogo o città..." autocomplete="off">
+    </div>
+  </div>
+  <div id="cercaRisultati">
+    <div class="salvati-empty">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <div class="salvati-empty-title">Cerca un bagno</div>
+      <div class="salvati-empty-sub">Scrivi una città o un indirizzo per trovare bagni vicini</div>
+    </div>
+  </div>
+</div>
+
+<!-- SALVATI TAB -->
+<div id="tab-salvati" style="display:none;flex-direction:column;flex:1;background:var(--bg);padding-bottom:6rem;">
+  <div style="background:#fff;padding:0.85rem 1rem 0.5rem;border-bottom:1px solid var(--border);">
+    <div style="font-size:0.875rem;font-weight:700;">I tuoi preferiti</div>
+  </div>
+  <div id="salvatiLista">
+    <div class="salvati-empty">
+      <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      <div class="salvati-empty-title">Nessun preferito ancora</div>
+      <div class="salvati-empty-sub">Tocca il cuore su un bagno per salvarlo qui</div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICHE TAB -->
+<div id="tab-notifiche" style="display:none;flex-direction:column;flex:1;background:var(--bg);padding-bottom:6rem;">
+  <div style="background:#fff;padding:0.85rem 1rem 0.5rem;border-bottom:1px solid var(--border);">
+    <div style="font-size:0.875rem;font-weight:700;">Notifiche</div>
+  </div>
+  <div id="notifLista">
+    <div class="salvati-empty">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="salvati-empty-title">Nessuna notifica</div>
+      <div class="salvati-empty-sub">Qui troverai i bagni che hai visitato e i reminder per le recensioni</div>
+    </div>
   </div>
 </div>
 
@@ -763,11 +840,13 @@ function openDetail(i) {
 
       <div class="divider"></div>
       <div class="det-ctas">
-        <button class="btn-nav" onclick="portaMiLi(b)"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Portami lì</button>
+        <button class="btn-nav" onclick="portaMiLi(tuttiBagni[currentDetailIndex])"><svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Portami lì</button>
         <button class="btn-share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
       </div>
     </div>`;
   document.getElementById('detOv').classList.add('show');
+  // Update heart button
+  setTimeout(() => aggiornaHeartBtn(typeof i === 'number' ? i : currentDetailIndex), 50);
 }
 
 
@@ -1080,6 +1159,319 @@ function aggiornaMappaMarkers(bagni) {
   });
 }
 
+
+// ── TAB SWITCHING ──
+let tabCorrente = 'mappa';
+let cercaAutocomplete = null;
+
+function switchTab(tab, navEl) {
+  tabCorrente = tab;
+  
+  // Update nav
+  if (navEl) {
+    document.querySelectorAll('.nitem').forEach(n => n.classList.remove('on'));
+    navEl.classList.add('on');
+  }
+
+  // Show/hide main app content
+  const mainContent = document.getElementById('screen-home') || document.querySelector('#app > div');
+  const mapArea = document.querySelector('.map-area');
+  const filtersEl = document.querySelector('.filters');
+  const listHead = document.querySelector('.list-head');
+  const lista = document.querySelector('.list');
+  const hdr = document.querySelector('header');
+
+  // Hide all tabs
+  ['cerca','salvati','notifiche'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.style.display = 'none';
+  });
+
+  // Show map elements
+  if (mapArea) mapArea.style.display = tab === 'mappa' ? 'block' : 'none';
+  if (filtersEl) filtersEl.style.display = tab === 'mappa' ? 'flex' : 'none';
+  if (listHead) listHead.style.display = tab === 'mappa' ? 'flex' : 'none';
+  if (lista) lista.style.display = tab === 'mappa' ? 'block' : 'none';
+
+  if (tab !== 'mappa') {
+    const el = document.getElementById('tab-' + tab);
+    if (el) el.style.display = 'flex';
+  }
+
+  // Init cerca autocomplete
+  if (tab === 'cerca' && !cercaAutocomplete && google && google.maps) {
+    setTimeout(initCercaAutocomplete, 100);
+  }
+
+  // Render salvati
+  if (tab === 'salvati') renderSalvati();
+  
+  // Render notifiche
+  if (tab === 'notifiche') renderNotifiche();
+}
+
+// ── CERCA con Google Places Autocomplete ──
+function initCercaAutocomplete() {
+  const input = document.getElementById('cercaInput');
+  if (!input || !google.maps.places) return;
+
+  cercaAutocomplete = new google.maps.places.Autocomplete(input, {
+    types: ['geocode', 'establishment'],
+    componentRestrictions: { country: 'it' },
+    fields: ['geometry', 'formatted_address', 'name']
+  });
+
+  cercaAutocomplete.addListener('place_changed', () => {
+    const place = cercaAutocomplete.getPlace();
+    if (!place.geometry) return;
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    // Trova bagni nel raggio di 2km
+    const risultati = tuttiBagni.filter(b => {
+      if (!b.lat || !b.lng) return false;
+      const dist = calcolaDistanza(lat, lng, parseFloat(b.lat), parseFloat(b.lng));
+      b._distanza = dist;
+      return dist <= 2000;
+    });
+    risultati.sort((a, b) => a._distanza - b._distanza);
+
+    // Centra mappa
+    if (map) {
+      map.setCenter({ lat, lng });
+      map.setZoom(14);
+    }
+
+    renderCercaRisultati(risultati, place.name || place.formatted_address);
+  });
+
+  input.addEventListener('input', () => {
+    if (input.value === '') {
+      document.getElementById('cercaRisultati').innerHTML = `
+        <div class="salvati-empty">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <div class="salvati-empty-title">Cerca un bagno</div>
+          <div class="salvati-empty-sub">Scrivi una città o un indirizzo per trovare bagni vicini</div>
+        </div>`;
+    }
+  });
+}
+
+function renderCercaRisultati(bagni, zona) {
+  const el = document.getElementById('cercaRisultati');
+  if (bagni.length === 0) {
+    el.innerHTML = `
+      <div class="salvati-empty">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/></svg>
+        <div class="salvati-empty-title">Nessun bagno trovato</div>
+        <div class="salvati-empty-sub">Non ci sono bagni nel raggio di 2km da "${zona}".<br>Aggiungine uno tu!</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="padding:0.65rem 1rem;font-size:0.75rem;color:var(--text2);background:#fff;border-bottom:1px solid var(--border);">
+      ${bagni.length} bagni trovati entro 2km da <strong>${zona}</strong>
+    </div>` +
+    bagni.map(b => {
+      const i = tuttiBagni.findIndex(x => x.id === b.id);
+      const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
+      const voto = b.voto ? parseFloat(b.voto) : 0;
+      const dist = b._distanza < 1000 ? Math.round(b._distanza) + ' m' : (b._distanza/1000).toFixed(1) + ' km';
+      const cl = getIconClass(b.tipo);
+      const ico = getIconSvg(b.tipo);
+      const starsHtml = Array.from({length:5}, (_,j) =>
+        `<svg viewBox="0 0 24 24" style="width:11px;height:11px;fill:${j < Math.round(voto) ? 'var(--amber)' : 'var(--border2)'}"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`
+      ).join('');
+      return `
+        <div class="item" onclick="openDetail(${i});switchTab('mappa',document.querySelector('.nitem'))">
+          <div class="item-icon ${cl}"><svg viewBox="0 0 24 24">${ico}</svg></div>
+          <div class="item-body">
+            <div class="item-name">${b.nome || 'Senza nome'}</div>
+            <div class="item-sub">${b.tipo || ''} · ${b.citta || ''}</div>
+            <div style="display:flex;gap:2px;">${starsHtml}</div>
+          </div>
+          <div class="item-right">
+            <div class="item-rating"><svg viewBox="0 0 24 24" style="fill:var(--amber)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${voto > 0 ? voto.toFixed(1) : '—'}</div>
+            <div class="item-dist">${dist}</div>
+            <div class="item-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+          </div>
+        </div>`;
+    }).join('');
+}
+
+// ── PREFERITI ──
+function getPreferiti() {
+  return JSON.parse(localStorage.getItem('peemap_preferiti') || '[]');
+}
+
+function savePreferiti(ids) {
+  localStorage.setItem('peemap_preferiti', JSON.stringify(ids));
+}
+
+function togglePreferito(i) {
+  const b = tuttiBagni[i];
+  if (!b) return;
+  let preferiti = getPreferiti();
+  const idx = preferiti.indexOf(String(b.id));
+  if (idx === -1) {
+    preferiti.push(String(b.id));
+    showToast('Aggiunto ai preferiti ❤️');
+  } else {
+    preferiti.splice(idx, 1);
+    showToast('Rimosso dai preferiti');
+  }
+  savePreferiti(preferiti);
+  aggiornaHeartBtn(i);
+  if (tabCorrente === 'salvati') renderSalvati();
+}
+
+function aggiornaHeartBtn(i) {
+  const btn = document.getElementById('heartBtn');
+  if (!btn) return;
+  const b = tuttiBagni[i];
+  const preferiti = getPreferiti();
+  btn.classList.toggle('saved', preferiti.includes(String(b?.id)));
+}
+
+function renderSalvati() {
+  const preferiti = getPreferiti();
+  const el = document.getElementById('salvatiLista');
+  const bagniFav = tuttiBagni.filter(b => preferiti.includes(String(b.id)));
+  
+  if (bagniFav.length === 0) {
+    el.innerHTML = `
+      <div class="salvati-empty">
+        <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        <div class="salvati-empty-title">Nessun preferito ancora</div>
+        <div class="salvati-empty-sub">Tocca il cuore su un bagno per salvarlo qui</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = bagniFav.map(b => {
+    const i = tuttiBagni.findIndex(x => x.id === b.id);
+    const gratuito = b.gratuito === true || b.gratuito === 'TRUE' || b.gratuito === 'true';
+    const voto = b.voto ? parseFloat(b.voto) : 0;
+    const cl = getIconClass(b.tipo);
+    const ico = getIconSvg(b.tipo);
+    return `
+      <div class="item" onclick="openDetail(${i});switchTab('mappa',document.querySelector('.nitem'))">
+        <div class="item-icon ${cl}"><svg viewBox="0 0 24 24">${ico}</svg></div>
+        <div class="item-body">
+          <div class="item-name">${b.nome || 'Senza nome'}</div>
+          <div class="item-sub">${b.tipo || ''} · ${b.citta || ''}</div>
+          <div class="item-tags">
+            ${gratuito ? '<span class="itag g">Gratuito</span>' : '<span class="itag a">A pagamento</span>'}
+          </div>
+        </div>
+        <div class="item-right">
+          <div class="item-rating"><svg viewBox="0 0 24 24" style="fill:var(--amber)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${voto > 0 ? voto.toFixed(1) : '—'}</div>
+          <div class="item-chevron"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── NOTIFICHE / BAGNI VISITATI ──
+function getVisitati() {
+  return JSON.parse(localStorage.getItem('peemap_visitati') || '[]');
+}
+
+function aggiungiVisitato(bagno) {
+  let visitati = getVisitati();
+  const exists = visitati.find(v => v.id === String(bagno.id));
+  if (!exists) {
+    visitati.unshift({
+      id: String(bagno.id),
+      nome: bagno.nome,
+      citta: bagno.citta || '',
+      data: new Date().toISOString(),
+      recensito: false
+    });
+    if (visitati.length > 20) visitati = visitati.slice(0, 20);
+    localStorage.setItem('peemap_visitati', JSON.stringify(visitati));
+    aggiornaBadgeNotifiche();
+  }
+}
+
+function aggiornaBadgeNotifiche() {
+  const visitati = getVisitati();
+  const nonRecensiti = visitati.filter(v => !v.recensito).length;
+  const bell = document.getElementById('bellBtn');
+  if (!bell) return;
+  const badge = bell.querySelector('.notif-badge');
+  if (nonRecensiti > 0) {
+    if (!badge) {
+      bell.style.position = 'relative';
+      const dot = document.createElement('div');
+      dot.className = 'notif-badge';
+      dot.style.cssText = 'position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red);border:1.5px solid #fff;';
+      bell.appendChild(dot);
+    }
+  } else if (badge) {
+    badge.remove();
+  }
+}
+
+function renderNotifiche() {
+  const visitati = getVisitati();
+  const el = document.getElementById('notifLista');
+
+  if (visitati.length === 0) {
+    el.innerHTML = `
+      <div class="salvati-empty">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <div class="salvati-empty-title">Nessuna notifica</div>
+        <div class="salvati-empty-sub">Qui troverai i bagni che hai visitato e i reminder per le recensioni</div>
+      </div>`;
+    return;
+  }
+
+  const messaggiRicordo = [
+    "Hai trovato un bagno decente? Dillo agli altri! 😄",
+    "La tua recensione vale oro per chi è nel momento del bisogno 🚻",
+    "30 secondi per aiutare migliaia di persone. Vale la pena! 😊",
+    "Il mondo ha bisogno di sapere com'era quel bagno 😄"
+  ];
+
+  el.innerHTML = visitati.map((v, idx) => {
+    const data = new Date(v.data);
+    const ora = data.toLocaleDateString('it-IT', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const msg = messaggiRicordo[idx % messaggiRicordo.length];
+    const bagnoIdx = tuttiBagni.findIndex(b => String(b.id) === v.id);
+    
+    if (!v.recensito) {
+      return `
+        <div class="notif-item">
+          <div class="notif-dot"></div>
+          <div class="notif-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg></div>
+          <div style="flex:1;">
+            <div class="notif-title">Hai visitato: ${v.nome}</div>
+            <div class="notif-sub">${msg}</div>
+            <div class="notif-time">${ora} · ${v.citta}</div>
+            ${bagnoIdx !== -1 ? `<button onclick="openDetail(${bagnoIdx});switchTab('mappa',document.querySelector('.nitem'))" style="margin-top:0.5rem;padding:0.4rem 0.85rem;border-radius:7px;background:var(--blue);color:#fff;font-family:Inter,sans-serif;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;">Recensisci ora</button>` : ''}
+          </div>
+        </div>`;
+    } else {
+      return `
+        <div class="notif-item" style="opacity:0.6;">
+          <div style="width:8px;"></div>
+          <div class="notif-icon" style="background:var(--green-light);"><svg viewBox="0 0 24 24" style="stroke:var(--green);"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div style="flex:1;">
+            <div class="notif-title">Recensito: ${v.nome}</div>
+            <div class="notif-sub">Grazie per aver contribuito! 🙏</div>
+            <div class="notif-time">${ora}</div>
+          </div>
+        </div>`;
+    }
+  }).join('');
+}
+
+// Hook mostraRevPopup per segnare come recensito
+const _origSubmit = window.submitRevPopup;
+
 // ── REVIEW POPUP LOGIC ──
 let revData = { bagnoId: null, stelle: 0, carta: null, sapone_rev: null, pulito: null, accessibile_rev: null };
 let visitTimer = null;
@@ -1156,6 +1548,8 @@ function calcolaDistanza(lat1, lng1, lat2, lng2) {
 
 function mostraRevPopup(bagno) {
   revData = { bagnoId: bagno.id, stelle: 0, carta: null, sapone_rev: null, pulito: null, accessibile_rev: null };
+  // Segna come visitato
+  aggiungiVisitato(bagno);
   goRevStep(1);
   document.getElementById('revOverlay').classList.add('show');
   if (watchId) { navigator.geolocation.clearWatch(watchId); watchId = null; }
@@ -1194,6 +1588,7 @@ async function submitRevPopup() {
     testo: commento
   });
   try { await fetch(`${API}?${params.toString()}`); } catch(e) {}
+  marcaRecensito(revData.bagnoId);
   closeRevPopup();
   showToast('Recensione inviata, grazie! 🙏');
 }
@@ -1201,6 +1596,13 @@ async function submitRevPopup() {
 function closeRevPopup() {
   document.getElementById('revOverlay').classList.remove('show');
   if (visitTimer) { clearTimeout(visitTimer); visitTimer = null; }
+}
+
+function marcaRecensito(bagnoId) {
+  let visitati = getVisitati();
+  visitati = visitati.map(v => v.id === String(bagnoId) ? {...v, recensito: true} : v);
+  localStorage.setItem('peemap_visitati', JSON.stringify(visitati));
+  aggiornaBadgeNotifiche();
 }
 
 // Hook into "Portami lì" button — trigger visit monitoring
@@ -1262,6 +1664,7 @@ function condividi(bagno) {
 // Avvio
 controllaLocalizzazione();
 caricaBagni();
+aggiornaBadgeNotifiche();
 </script>
 
 
