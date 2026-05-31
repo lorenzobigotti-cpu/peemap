@@ -467,9 +467,9 @@
   </div>
 
   <div class="srch-wrap">
-    <div class="srch">
+    <div class="srch" onclick="switchTab('cerca',document.querySelectorAll('.nitem')[1])" style="cursor:pointer;">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Cerca per luogo o indirizzo..." oninput="filtraBagni()">
+      <input type="text" placeholder="Cerca bagni per luogo o città..." readonly style="cursor:pointer;" onclick="switchTab('cerca',document.querySelectorAll('.nitem')[1])">
     </div>
   </div>
 
@@ -504,7 +504,7 @@
 
 <!-- CERCA TAB -->
 <div id="tab-cerca" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:100vh;z-index:50;background:var(--bg);flex-direction:column;overflow-y:auto;">
-  <div style="background:#fff;padding:0.85rem 1rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;padding-top:calc(0.85rem + env(safe-area-inset-top));">
+  <div style="background:#fff;padding:1rem 1rem 0.85rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;margin-top:60px;">
     <div style="font-size:1rem;font-weight:800;margin-bottom:0.65rem;">Cerca</div>
     <div style="display:flex;gap:0.5rem;">
       <div class="srch" style="margin:0;flex:1;">
